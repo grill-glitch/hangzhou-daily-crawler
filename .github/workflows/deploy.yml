@@ -14,13 +14,107 @@ jobs:
       id-token: write
     steps:
       - uses: actions/checkout@v4
-      - name: Test
-        run: echo "Hello from Deploy workflow"
+      
+      - name: Setup Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+          
+      - name: Install dependencies
+        run: pip install requests
+        
+      - name: Determine date to crawl
+        id: date
+        run: |
+          DATE=$(date -d "yesterday" +%Y-%m-%d)
+          echo "date=$DATE" >> $GITHUB_OUTPUT
+          
+      - name: Crawl Hangzhou Daily
+        run: |
+          DATE="${{ steps.date.outputs.date }}"
+          echo "Crawling $DATE..."
+          python3 dskb_crawler_v2.py "$DATE"
+          
+      - name: Generate summaries
+        run: |
+          DATE="${{ steps.date.outputs.date }}"
+          if [ -f "dskb_${DATE}.json" ]; then
+            python3 generate_summary.py "$DATE" > "summary_${DATE}.txt"
+            python3 extract_short_news.py "$DATE" > "short_news_${DATE}.txt"
+          else
+            echo "No data for $DATE, skipping summary"
+          fi
+          
+      - name: Prepare site
+        run: |
+          mkdir -p _site
+          cp dskb_*.json _site/ 2>/dev/null || true
+          cp summary_*.txt _site/ 2>/dev/null || true
+          cp short_news_*.txt _site/ 2>/dev/null || true
+          
+          cd _site
+          
+          # Generate data.json index
+          python3 << 'PYEOF'
+import json, os
+index = {}
+for filename in os.listdir('.'):
+    if filename.startswith('dskb_') and filename.endswith('.json'):
+        date = filename[5:-5]
+        try:
+            with open(filename, 'r', encoding='utf-8') as fp:
+                data = json.load(fp)
+            index[date] = {
+                'total_sections': data.get('total_sections', 0),
+                'total_articles': data.get('total_articles', 0),
+                'total_words': sum(a.get('word_count', 0) for a in data.get('articles', [])),
+                'sections': data.get('sections', [])
+            }
+            if os.path.exists(f'summary_{date}.txt'):
+                index[date]['summary'] = True
+            if os.path.exists(f'short_news_{date}.txt'):
+                index[date]['short_news'] = True
+        except Exception as e:
+            print(f"Skipping {filename}: {e}")
+with open('data.json', 'w', encoding='utf-8') as fp:
+    json.dump(index, fp, ensure_ascii=False, indent=2)
+print(f"Created data.json for {len(index)} dates")
+PYEOF
+          
+          # Generate simple index.html
+          cat > index.html << 'EOF'
+<!DOCTYPE html>
+<html>
+<head><meta charset="utf-8"><title>Hangzhou Daily Archive</title></head>
+<body>
+<h1>Archive</h1>
+<pre id="data"></pre>
+<script>
+fetch('data.json').then(r=>r.json()).then(d=>{
+  const dates=Object.keys(d).sort().reverse();
+  const list=document.createElement('div');
+  dates.forEach(date=>{
+    const day=d[date];
+    const card=document.createElement('div');
+    card.innerHTML=`<h2>${date}</h2><p>Sections:${day.total_sections} Articles:${day.total_articles} Words:${(day.total_words/10000).toFixed(1)}万</p>`;
+    list.appendChild(card);
+  });
+  document.body.appendChild(list);
+});
+</script>
+</body>
+</html>
+EOF
+EOF
+
       - name: Setup Pages
         uses: actions/configure-pages@v4
-      - name: Upload
+        
+      - name: Upload artifact
         uses: actions/upload-pages-artifact@v3
         with:
-          path: .
-      - name: Deploy
+          path: _site
+          
+      - name: Deploy to GitHub Pages
+        id: deployment
         uses: actions/deploy-pages@v4
