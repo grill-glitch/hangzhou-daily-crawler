@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """
-都市快报数字版爬虫 (新版)
+都市快报数字版爬虫 (修复版)
 基于 page_detail + article_list iframe 结构
 
 用法：
@@ -112,19 +112,8 @@ def get_articles_from_section(section_url: str) -> List[Dict[str, str]]:
     return articles
 
 
-def extract_content_area(html: str) -> str:
-    """提取文章正文区域，优先使用 div.content"""
-    match = re.search(r'<div[^>]*class=["\'][^"\']*content[^"\']*["\'][^>]*>(.*?)</div>', html, re.DOTALL | re.IGNORECASE)
-    if match:
-        return match.group(1)
-    
-    # 回退：返回 body 内容
-    body_match = re.search(r'<body[^>]*>(.*?)</body>', html, re.DOTALL | re.IGNORECASE)
-    return body_match.group(1) if body_match else html
-
-
 def parse_article_detail(html: str) -> Dict[str, Any]:
-    """解析文章详情页"""
+    """解析文章详情页（修复版：使用可靠的内容提取方法）"""
     from html import unescape
     
     # 提取标题
@@ -132,26 +121,41 @@ def parse_article_detail(html: str) -> Dict[str, Any]:
     title = unescape(title_match.group(1).strip()) if title_match else ""
     title = title.replace('都市快报-', '').strip()
     
-    # 提取正文内容区域
-    raw_content = extract_content_area(html)
+    # 提取正文：先提取 body 内容，然后过滤
+    body_match = re.search(r'<body[^>]*>(.*?)</body>', html, re.DOTALL | re.IGNORECASE)
+    content = body_match.group(1) if body_match else html
     
     # 清理 HTML 标签
-    content = raw_content
     content = re.sub(r'<script[^>]*>.*?</script>', '', content, flags=re.DOTALL | re.IGNORECASE)
     content = re.sub(r'<style[^>]*>.*?</style>', '', content, flags=re.DOTALL | re.IGNORECASE)
+    content = re.sub(r'<nav[^>]*>.*?</nav>', '', content, flags=re.DOTALL | re.IGNORECASE)
+    content = re.sub(r'<header[^>]*>.*?</header>', '', content, flags=re.DOTALL | re.IGNORECASE)
+    content = re.sub(r'<footer[^>]*>.*?</footer>', '', content, flags=re.DOTALL | re.IGNORECASE)
+    
     content = re.sub(r'<br\s*/?>', '\n', content, flags=re.IGNORECASE)
     content = re.sub(r'</p>', '\n', content, flags=re.IGNORECASE)
     content = re.sub(r'<p[^>]*>', '\n', content, flags=re.IGNORECASE)
     content = re.sub(r'<[^>]+>', ' ', content)
     content = unescape(content)
     
-    # 统一空白字符
-    content = content.replace('\u3000', ' ')  # 全角空格
-    content = content.replace('\t', ' ')
+    content = re.sub(r'\n{3,}', '\n\n', content)
+    content = content.strip()
     
-    # 按行清理
+    # 提取作者（在清理后的内容中）
+    author_match = re.search(r'记者\s+([^\s\n]+)', content)
+    author = author_match.group(1) if author_match else ""
+    
+    # 提取日期
+    date_match = re.search(r'(\d{4})[-年](\d{1,2})[-月](\d{1,2})日?', content)
+    if date_match:
+        publish_date = f"{date_match.group(1)}-{int(date_match.group(2)):02d}-{int(date_match.group(3)):02d}"
+    else:
+        publish_date = ""
+    
+    # 清理内容：移除导航文本，保留段落换行
     lines = content.split('\n')
     cleaned_lines = []
+    prev_blank = False  # 追踪前一行是否为空
     
     for line in lines:
         stripped = line.strip()
@@ -164,29 +168,18 @@ def parse_article_detail(html: str) -> Dict[str, Any]:
         if re.fullmatch(r'[-=_=]{2,}', stripped):
             continue
         
+        # 处理空行：只保留一个连续的空白行
         if not stripped:
-            # 只在有内容后添加单个空行分隔
-            if cleaned_lines and cleaned_lines[-1].strip():
+            if not prev_blank:
                 cleaned_lines.append('')
-            continue
-        
-        # 清理行内多余空白并添加
-        cleaned_line = re.sub(r'\s+', ' ', stripped)
-        cleaned_lines.append(cleaned_line)
+                prev_blank = True
+        else:
+            cleaned_lines.append(stripped)
+            prev_blank = False
     
     content = '\n'.join(cleaned_lines)
-    content = re.sub(r'\n{3,}', '\n\n', content)  # 最多2个连续换行
+    content = re.sub(r'\n{3,}', '\n\n', content)
     content = content.strip()
-    
-    # 提取作者和日期（在清理后的内容中）
-    author_match = re.search(r'记者\s+([^\s\n]+)', content)
-    author = author_match.group(1) if author_match else ""
-    
-    date_match = re.search(r'(\d{4})[-年](\d{1,2})[-月](\d{1,2})日?', content)
-    if date_match:
-        publish_date = f"{date_match.group(1)}-{int(date_match.group(2)):02d}-{int(date_match.group(3)):02d}"
-    else:
-        publish_date = ""
     
     # 移除正文开头的重复标题
     if title and title.strip():
@@ -300,7 +293,7 @@ def crawl_newspaper(date_str: str, save_individual: bool = False) -> Dict[str, A
     
     print("\n按版块统计:")
     for sec, count in sorted(section_counts.items()):
-        sec_name = section_counts.get(sec, '') or next((s['name'] for s in sections if s['code'] == sec), '')
+        sec_name = next((s['name'] for s in sections if s['code'] == sec), '')
         print(f"  {sec} ({sec_name}): {count}篇")
     
     total_words = sum(art.get('word_count', 0) for art in all_articles)
