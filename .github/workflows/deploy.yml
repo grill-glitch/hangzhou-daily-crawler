@@ -1,185 +1,71 @@
-name: Crawl and Deploy Hangzhou Daily
+name: Deploy to Pages
 
 on:
   schedule:
-    # 每天凌晨 2:30 运行（抓取前一天的报纸）
     - cron: '30 2 * * *'
-  workflow_dispatch: {}  # 允许手动触发
+  workflow_dispatch: {}
   push:
-    branches: [ master, main ]
+    branches: [master, main]
 
 jobs:
-  crawl-and-deploy:
+  deploy:
     runs-on: ubuntu-latest
     permissions:
       contents: write
       pages: write
       id-token: write
-
     steps:
-    - name: Checkout repository
-      uses: actions/checkout@v4
-
-    - name: Set up Python
-      uses: actions/setup-python@v5
-      with:
-        python-version: '3.11'
-
-    - name: Install dependencies
-      run: |
-        pip install requests
-
-    - name: Determine date to crawl
-      id: date
-      run: |
-        # 获取昨天的日期（报纸通常在第二天发布）
-        DATE=$(date -d "yesterday" +%Y-%m-%d)
-        echo "date=$DATE" >> $GITHUB_OUTPUT
-        echo "Will crawl: $DATE"
-
-    - name: Crawl Hangzhou Daily
-      run: |
-        DATE="${{ steps.date.outputs.date }}"
-        echo "Crawling $DATE..."
-        python3 dskb_crawler_v2.py "$DATE"
-
-    - name: Generate summaries
-      run: |
-        DATE="${{ steps.date.outputs.date }}"
-        if [ -f "dskb_${DATE}.json" ]; then
-          python3 generate_summary.py "$DATE" > "summary_${DATE}.txt"
-          python3 extract_short_news.py "$DATE" > "short_news_${DATE}.txt"
-        else
-          echo "No data for $DATE, skipping summary"
-        fi
-
-    - name: Prepare site
-      run: |
-        mkdir -p _site
-        
-        # 复制所有数据文件到站点目录
-        cp dskb_*.json _site/ 2>/dev/null || true
-        cp summary_*.txt _site/ 2>/dev/null || true
-        cp short_news_*.txt _site/ 2>/dev/null || true
-        
-        # 生成 data.json 索引
-        cd _site
-        python3 << 'PYEOF'
-import json
-import os
-
-index = {}
-for filename in os.listdir('.'):
-    if filename.startswith('dskb_') and filename.endswith('.json'):
-        date = filename[5:-5]
-        try:
-            with open(filename, 'r', encoding='utf-8') as f:
-                data = json.load(f)
-            index[date] = {
-                'total_sections': data.get('total_sections', 0),
-                'total_articles': data.get('total_articles', 0),
-                'total_words': sum(a.get('word_count', 0) for a in data.get('articles', [])),
-                'sections': data.get('sections', [])
-            }
-            if os.path.exists(f'summary_{date}.txt'):
-                index[date]['summary'] = True
-            if os.path.exists(f'short_news_{date}.txt'):
-                index[date]['short_news'] = True
-        except Exception as e:
-            print(f"Skipping {filename}: {e}")
-
-with open('data.json', 'w', encoding='utf-8') as f:
-    json.dump(index, f, ensure_ascii=False, indent=2)
-print(f"Created data.json for {len(index)} dates")
-PYEOF
-
-        # 生成 index.html
-        cat > index.html << 'EOD2'
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+      - run: pip install requests
+      - name: Determine date
+        id: date
+        run: |
+          DATE=$(date -d yesterday +%Y-%m-%d)
+          echo "date=$DATE" >> $GITHUB_OUTPUT
+      - name: Crawl
+        run: python3 dskb_crawler_v2.py ${{ steps.date.outputs.date }}
+      - name: Summaries
+        run: |
+          DATE=${{ steps.date.outputs.date }}
+          [ -f "dskb_${DATE}.json" ] && {
+            python3 generate_summary.py "$DATE" > "summary_${DATE}.txt"
+            python3 extract_short_news.py "$DATE" > "short_news_${DATE}.txt"
+          }
+      - name: Prepare site
+        run: |
+          mkdir -p _site
+          cp dskb_*.json _site/ 2>/dev/null || true
+          cp summary_*.txt _site/ 2>/dev/null || true
+          cp short_news_*.txt _site/ 2>/dev/null || true
+          cd _site
+          python3 -c "
+import json, os
+idx = {}
+for f in os.listdir('.'):
+  if f.startswith('dskb_') and f.endswith('.json'):
+    date = f[5:-5]
+    with open(f) as fp: data = json.load(fp)
+    idx[date] = {
+      'total_sections': data.get('total_sections',0),
+      'total_articles': data.get('total_articles',0),
+      'total_words': sum(a.get('word_count',0) for a in data.get('articles',[])),
+      'sections': data.get('sections',[])
+    }
+    if os.path.exists(f'summary_{date}.txt'): idx[date]['summary'] = True
+    if os.path.exists(f'short_news_{date}.txt'): idx[date]['short_news'] = True
+with open('data.json','w',encoding='utf-8') as f: json.dump(idx,f,ensure_ascii=False,indent=2)
+print(f\"Created data.json with {len(idx)} dates\")"
+          cat > index.html << 'EOF2'
 <!DOCTYPE html>
-<html lang="zh-CN">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>都市快报 Digital Archive</title>
-    <style>
-        :root { --primary: #ff6b6b; --bg: #f5f5f5; --card-bg: #fff; }
-        body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; margin: 0; padding: 20px; background: var(--bg); }
-        .container { max-width: 960px; margin: 0 auto; }
-        h1 { color: #333; border-bottom: 3px solid var(--primary); padding-bottom: 15px; margin-bottom: 30px; }
-        .intro { background: var(--card-bg); padding: 20px; border-radius: 8px; margin-bottom: 30px; box-shadow: 0 2px 8px rgba(0,0,0,0.08); }
-        .date-card { background: var(--card-bg); padding: 20px; margin: 20px 0; border-radius: 8px; box-shadow: 0 2px 8px rgba(0,0,0,0.08); }
-        .date-card h2 { margin-top: 0; color: var(--primary); font-size: 1.3em; }
-        .stats { display: grid; grid-template-columns: repeat(auto-fit, minmax(100px, 1fr)); gap: 15px; margin: 15px 0; }
-        .stat { background: #f8f9fa; padding: 12px; border-radius: 6px; text-align: center; }
-        .stat-value { font-size: 1.4em; font-weight: bold; color: #333; }
-        .stat-label { font-size: 0.85em; color: #666; margin-top: 5px; }
-        .link-btn { display: inline-block; margin: 5px 5px 5px 0; padding: 10px 18px; background: var(--primary); color: white; text-decoration: none; border-radius: 6px; font-size: 0.9em; transition: 0.2s; }
-        .link-btn:hover { background: #ff5252; transform: translateY(-1px); }
-        .section-list { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 12px; }
-        .section-tag { background: #e9ecef; padding: 4px 10px; border-radius: 12px; font-size: 0.85em; color: #495057; }
-        footer { text-align: center; padding: 40px 20px; color: #666; font-size: 0.9em; }
-        .last-update { color: #999; font-size: 0.85em; margin-top: 5px; }
-    </style>
-</head>
-<body>
-    <div class="container">
-        <h1>📰 都市快报 Digital Archive</h1>
-        <div class="intro">
-            <p>这里是《都市快报》数字报的自动归档项目。使用 Python 爬虫每日抓取，提供完整版块内容。</p>
-            <p><strong>最新数据：</strong> $(date +%Y-%m-%d)</p>
-        </div>
-        <div id="dates"></div>
-        <footer>
-            <p>Powered by <a href="https://github.com/grill-glitch/hangzhou-daily-crawler">Hangzhou Daily Crawler</a></p>
-            <p class="last-update">Last updated: <span id="last-updated"></span></p>
-        </footer>
-    </div>
-
-    <script>
-        async function loadIndex() {
-            try {
-                const response = await fetch('data.json');
-                if (!response.ok) throw new Error('No data.json');
-                const data = await response.json();
-                renderIndex(data);
-            } catch (e) {
-                document.getElementById('dates').innerHTML = '<p>暂无数据</p>';
-                console.error('Failed to load data:', e);
-            }
-            document.getElementById('last-updated').textContent = new Date().toLocaleString('zh-CN');
-        }
-        
-        function renderIndex(data) {
-            const container = document.getElementById('dates');
-            const dates = Object.keys(data).sort().reverse();
-            
-            dates.forEach(date => {
-                const day = data[date];
-                const card = document.createElement('div');
-                card.className = 'date-card';
-                const sectionTags = day.sections ? day.sections.map(s => 
-                    `<span class="section-tag" title="${s.name}">${s.code}</span>`
-                ).join('') : '';
-                card.innerHTML = `
-                    <h2>${date}</h2>
-                    <div class="stats">
-                        <div class="stat"><div class="stat-value">${day.total_sections}</div><div class="stat-label">版块</div></div>
-                        <div class="stat"><div class="stat-value">${day.total_articles}</div><div class="stat-label">文章</div></div>
-                        <div class="stat"><div class="stat-value">${(day.total_words / 10000).toFixed(1)}万</div><div class="stat-label">字数</div></div>
-                    </div>
-                    <div>
-                        <a class="link-btn" href="dskb_${date}.json">📄 原始数据</a>
-                        ${day.summary ? `<a class="link-btn" href="summary_${date}.txt">📋 摘要</a>` : ''}
-                        ${day.short_news ? `<a class="link-btn" href="short_news_${date}.txt">⚡ 短新闻</a>` : ''}
-                    </div>
-                    <div class="section-list">${sectionTags}</div>
-                `;
-                container.appendChild(card);
-            });
-        }
-        loadIndex();
-    </script>
-</body>
-</html>
-EOD2
-        echo "Site prepared in _site/"
+<html>
+<head><meta charset="UTF-8"><title>Hangzhou Daily Archive</title></head>
+<body><h1>Archive</h1><p>Data available: <pre>$(ls dskb_*.json 2>/dev/null | sed 's/^/- /')</pre></p></body></html>
+EOF2
+      - uses: actions/configure-pages@v4
+      - uses: actions/upload-pages-artifact@v3
+        with:
+          path: ./_site
+      - uses: actions/deploy-pages@v4
