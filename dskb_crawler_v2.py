@@ -112,6 +112,17 @@ def get_articles_from_section(section_url: str) -> List[Dict[str, str]]:
     return articles
 
 
+def extract_content_area(html: str) -> str:
+    """提取文章正文区域，优先使用 div.content"""
+    match = re.search(r'<div[^>]*class=["\'][^"\']*content[^"\']*["\'][^>]*>(.*?)</div>', html, re.DOTALL | re.IGNORECASE)
+    if match:
+        return match.group(1)
+    
+    # 回退：返回 body 内容
+    body_match = re.search(r'<body[^>]*>(.*?)</body>', html, re.DOTALL | re.IGNORECASE)
+    return body_match.group(1) if body_match else html
+
+
 def parse_article_detail(html: str) -> Dict[str, Any]:
     """解析文章详情页"""
     from html import unescape
@@ -121,37 +132,26 @@ def parse_article_detail(html: str) -> Dict[str, Any]:
     title = unescape(title_match.group(1).strip()) if title_match else ""
     title = title.replace('都市快报-', '').strip()
     
-    # 提取正文
-    content = html
+    # 提取正文内容区域
+    raw_content = extract_content_area(html)
+    
+    # 清理 HTML 标签
+    content = raw_content
     content = re.sub(r'<script[^>]*>.*?</script>', '', content, flags=re.DOTALL | re.IGNORECASE)
     content = re.sub(r'<style[^>]*>.*?</style>', '', content, flags=re.DOTALL | re.IGNORECASE)
-    content = re.sub(r'<nav[^>]*>.*?</nav>', '', content, flags=re.DOTALL | re.IGNORECASE)
-    content = re.sub(r'<header[^>]*>.*?</header>', '', content, flags=re.DOTALL | re.IGNORECASE)
-    content = re.sub(r'<footer[^>]*>.*?</footer>', '', content, flags=re.DOTALL | re.IGNORECASE)
-    
     content = re.sub(r'<br\s*/?>', '\n', content, flags=re.IGNORECASE)
     content = re.sub(r'</p>', '\n', content, flags=re.IGNORECASE)
     content = re.sub(r'<p[^>]*>', '\n', content, flags=re.IGNORECASE)
     content = re.sub(r'<[^>]+>', ' ', content)
     content = unescape(content)
-    content = re.sub(r'\n{3,}', '\n\n', content)
-    content = content.strip()
     
-    # 提取作者
-    author_match = re.search(r'记者\s+([^\s\n]+)', content)
-    author = author_match.group(1) if author_match else ""
+    # 统一空白字符
+    content = content.replace('\u3000', ' ')  # 全角空格
+    content = content.replace('\t', ' ')
     
-    # 提取日期
-    date_match = re.search(r'(\d{4})[-年](\d{1,2})[-月](\d{1,2})日?', content)
-    if date_match:
-        publish_date = f"{date_match.group(1)}-{int(date_match.group(2)):02d}-{int(date_match.group(3)):02d}"
-    else:
-        publish_date = ""
-    
-    # 清理内容：移除导航文本，保留段落换行
+    # 按行清理
     lines = content.split('\n')
     cleaned_lines = []
-    prev_blank = False  # 追踪前一行是否为空
     
     for line in lines:
         stripped = line.strip()
@@ -160,24 +160,33 @@ def parse_article_detail(html: str) -> Dict[str, Any]:
         if any(keyword in stripped for keyword in ['上一篇', '下一篇>>', '返回主页']):
             continue
         
-        # 跳过纯分隔线（如 === 或 ---）
+        # 跳过纯分隔线
         if re.fullmatch(r'[-=_=]{2,}', stripped):
             continue
         
-        # 处理空行：只保留一个连续的空白行（压缩多个连续空行）
         if not stripped:
-            if not prev_blank:
-                cleaned_lines.append(line)  # 保留第一个空行
-                prev_blank = True
-            # 如果前一行已经是空行，则跳过（避免连续多个空行）
-        else:
-            cleaned_lines.append(line)
-            prev_blank = False
+            # 只在有内容后添加单个空行分隔
+            if cleaned_lines and cleaned_lines[-1].strip():
+                cleaned_lines.append('')
+            continue
+        
+        # 清理行内多余空白并添加
+        cleaned_line = re.sub(r'\s+', ' ', stripped)
+        cleaned_lines.append(cleaned_line)
     
     content = '\n'.join(cleaned_lines)
-    # 确保没有超过2个连续换行
-    content = re.sub(r'\n{3,}', '\n\n', content)
+    content = re.sub(r'\n{3,}', '\n\n', content)  # 最多2个连续换行
     content = content.strip()
+    
+    # 提取作者和日期（在清理后的内容中）
+    author_match = re.search(r'记者\s+([^\s\n]+)', content)
+    author = author_match.group(1) if author_match else ""
+    
+    date_match = re.search(r'(\d{4})[-年](\d{1,2})[-月](\d{1,2})日?', content)
+    if date_match:
+        publish_date = f"{date_match.group(1)}-{int(date_match.group(2)):02d}-{int(date_match.group(3)):02d}"
+    else:
+        publish_date = ""
     
     # 移除正文开头的重复标题
     if title and title.strip():
