@@ -11,7 +11,7 @@ jobs:
   deploy:
     runs-on: ubuntu-latest
     permissions:
-      contents: write
+      contents: read
       pages: write
       id-token: write
     steps:
@@ -47,7 +47,7 @@ jobs:
             echo "No data for $DATE, skipping cleanup"
           fi
           
-      - name: Generate summaries
+      - name: Generate markdown pages
         run: |
           DATE="${{ steps.date.outputs.date }}"
           if [ -f "dskb_${DATE}.json" ]; then
@@ -55,7 +55,7 @@ jobs:
             python3 extract_short_news.py "$DATE" > "short_news_${DATE}.txt"
             python3 merge_to_md.py "$DATE" --output _site
           else
-            echo "No data for $DATE, skipping summary"
+            echo "No data for $DATE, skipping markdown generation"
           fi
           
       - name: Prepare site
@@ -63,6 +63,9 @@ jobs:
           
       - name: Setup Pages
         uses: actions/configure-pages@v4
+        
+      - name: Add CNAME
+        run: echo "grill-glitch.github.io" > _site/CNAME
         
       - name: Upload artifact
         uses: actions/upload-pages-artifact@v3

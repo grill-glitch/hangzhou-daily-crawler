@@ -14,6 +14,56 @@ def main():
     
     os.chdir('_site')
     
+    # Convert markdown files to HTML
+    for md_file in [f for f in os.listdir('.') if f.startswith('dskb_') and f.endswith('.md')]:
+        html_file = md_file.replace('.md', '.html')
+        date_str = md_file[5:-3]  # Extract date from dskb_YYYY-MM-DD.md
+        
+        # Read markdown content
+        with open(md_file, 'r', encoding='utf-8') as f:
+            md_content = f.read()
+        
+        # Create HTML page with markdown rendering
+        page_html = f'''<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>都市快报 {date_str}</title>
+  <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
+  <style>
+    body {{ font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif; margin: 0; padding: 20px; background: #f5f5f5; }}
+    .container {{ max-width: 900px; margin: auto; background: white; padding: 30px; border-radius: 8px; box-shadow: 0 2px 12px rgba(0,0,0,0.1); }}
+    .back {{ display: inline-block; margin-bottom: 20px; color: #ff6b6b; text-decoration: none; font-weight: bold; }}
+    .back:hover {{ text-decoration: underline; }}
+    h1 {{ color: #333; border-bottom: 3px solid #ff6b6b; padding-bottom: 10px; }}
+    h2 {{ color: #555; margin-top: 2em; border-bottom: 1px solid #eee; padding-bottom: 5px; }}
+    h3 {{ color: #666; margin-top: 1.5em; }}
+    p {{ line-height: 1.8; margin: 1em 0; }}
+    a {{ color: #ff6b6b; text-decoration: none; }}
+    a:hover {{ text-decoration: underline; }}
+    blockquote {{ border-left: 4px solid #ff6b6b; padding-left: 1em; margin: 1em 0; color: #666; font-style: italic; }}
+    code {{ background: #f4f4f4; padding: 2px 6px; border-radius: 3px; font-family: monospace; }}
+    pre {{ background: #f4f4f4; padding: 15px; border-radius: 5px; overflow-x: auto; }}
+    pre code {{ background: transparent; padding: 0; }}
+    hr {{ border: none; border-top: 1px solid #eee; margin: 2em 0; }}
+  </style>
+</head>
+<body>
+  <div class="container">
+    <a href="index.html" class="back">← 返回索引</a>
+    <div id="content"></div>
+  </div>
+  <script>
+    document.getElementById('content').innerHTML = marked.parse(`{md_content.replace('`', '\\`')}`);
+  </script>
+</body>
+</html>'''
+        
+        with open(html_file, 'w', encoding='utf-8') as f:
+            f.write(page_html)
+        print(f"Created {html_file} from {md_file}")
+    
     # Build data.json index
     index = {}
     for filename in os.listdir('.'):
@@ -28,6 +78,9 @@ def main():
                     'total_words': sum(a.get('word_count', 0) for a in data.get('articles', [])),
                     'sections': data.get('sections', [])
                 }
+                html_file = f'dskb_{date}.html'
+                if os.path.exists(html_file):
+                    index[date]['html'] = True
                 if os.path.exists(f'summary_{date}.txt'):
                     index[date]['summary'] = True
                 if os.path.exists(f'short_news_{date}.txt'):
@@ -87,6 +140,7 @@ def main():
             </div>
             <div>
               <a class="btn" href="dskb_${date}.json">📄 原始数据</a>
+              ${d.html ? '<a class="btn" href="dskb_'+date+'.html">📖 阅读页面</a>' : ''}
               ${d.summary ? '<a class="btn" href="summary_'+date+'.txt">📋 摘要</a>' : ''}
               ${d.short_news ? '<a class="btn" href="short_news_'+date+'.txt">⚡ 短新闻</a>' : ''}
             </div>

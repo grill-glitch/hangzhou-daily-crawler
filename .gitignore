@@ -1,4 +1,5 @@
-# Python
+# 环境与依赖
+.env
 __pycache__/
 *.py[cod]
 *$py.class
@@ -17,25 +18,19 @@ nosetests.xml
 coverage.xml
 *.cover
 *.log
-.git
-.mypy_cache/
-.pytest_cache/
-.hypothesis/
-
-# 项目特定
-*.json
-!dskb_*.json
-dskb_*/
-output/
-.learnings/
-
-# IDE
-.vscode/
 .idea/
+.vscode/
 *.swp
 *.swo
-*~
 
-# OS
+# 爬虫输出数据
+_site/
+output/
+dskb_*.json
+dskb_*/
+summary_*.txt
+short_news_*.txt
+
+# 系统文件
 .DS_Store
 Thumbs.db
