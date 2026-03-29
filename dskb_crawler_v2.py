@@ -179,6 +179,13 @@ def parse_article_detail(html: str) -> Dict[str, Any]:
     content = re.sub(r'\n{3,}', '\n\n', content)
     content = content.strip()
     
+    # 移除正文开头的重复标题
+    if title and title.strip():
+        title_clean = title.strip()
+        content_stripped = content.lstrip()
+        if content_stripped.startswith(title_clean):
+            content = content[content.find(title_clean) + len(title_clean):].lstrip()
+    
     return {
         'title': title,
         'author': author,

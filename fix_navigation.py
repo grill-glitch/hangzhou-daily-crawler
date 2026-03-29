@@ -3,8 +3,13 @@ import json
 import re
 import sys
 
-def clean_content(content):
-    """清理单篇文章内容，保留段落换行"""
+def clean_content(content, title=None):
+    """清理单篇文章内容，保留段落换行
+    
+    Args:
+        content: 原始内容
+        title: 文章标题（可选），用于移除正文开头的重复标题
+    """
     if not content:
         return ""
     lines = content.split('\n')
@@ -34,6 +39,17 @@ def clean_content(content):
     
     content = '\n'.join(cleaned_lines)
     content = re.sub(r'\n{3,}', '\n\n', content)
+    content = content.strip()
+    
+    # 如果提供了标题，移除正文开头的重复标题
+    if title and title.strip():
+        title_clean = title.strip()
+        # 检查内容是否以标题开头（忽略前导空白）
+        content_stripped = content.lstrip()
+        if content_stripped.startswith(title_clean):
+            # 移除标题部分
+            content = content[content.find(title_clean) + len(title_clean):].lstrip()
+    
     return content.strip()
 
 # 读取原始JSON数据
@@ -44,7 +60,8 @@ with open('dskb_2026-03-29.json', 'r', encoding='utf-8') as f:
 for art in data['articles']:
     if 'content' in art:
         old = art['content']
-        new = clean_content(old)
+        title = art.get('title', '')
+        new = clean_content(old, title)
         art['content'] = new
         art['word_count'] = len(new)
 
