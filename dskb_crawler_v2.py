@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """
-都市快报数字版爬虫 (修复版)
+都市快报数字版爬虫 (修复版 + 图片正文支持)
 基于 page_detail + article_list iframe 结构
 
 用法：
@@ -112,50 +112,38 @@ def get_articles_from_section(section_url: str) -> List[Dict[str, str]]:
     return articles
 
 
-def parse_article_detail(html: str) -> Dict[str, Any]:
-    """解析文章详情页（修复版：使用可靠的内容提取方法）"""
+def extract_text_from_body(html: str) -> str:
+    """从HTML的body中提取清理后的文本"""
     from html import unescape
     
-    # 提取标题
-    title_match = re.search(r'<title>([^<]+)</title>', html, re.IGNORECASE)
-    title = unescape(title_match.group(1).strip()) if title_match else ""
-    title = title.replace('都市快报-', '').strip()
-    
-    # 提取正文：先提取 body 内容，然后过滤
     body_match = re.search(r'<body[^>]*>(.*?)</body>', html, re.DOTALL | re.IGNORECASE)
-    content = body_match.group(1) if body_match else html
+    if not body_match:
+        return ""
     
-    # 清理 HTML 标签
+    content = body_match.group(1)
+    
+    # 移除不需要的标签
     content = re.sub(r'<script[^>]*>.*?</script>', '', content, flags=re.DOTALL | re.IGNORECASE)
     content = re.sub(r'<style[^>]*>.*?</style>', '', content, flags=re.DOTALL | re.IGNORECASE)
     content = re.sub(r'<nav[^>]*>.*?</nav>', '', content, flags=re.DOTALL | re.IGNORECASE)
     content = re.sub(r'<header[^>]*>.*?</header>', '', content, flags=re.DOTALL | re.IGNORECASE)
     content = re.sub(r'<footer[^>]*>.*?</footer>', '', content, flags=re.DOTALL | re.IGNORECASE)
     
+    # 转换为文本
     content = re.sub(r'<br\s*/?>', '\n', content, flags=re.IGNORECASE)
     content = re.sub(r'</p>', '\n', content, flags=re.IGNORECASE)
     content = re.sub(r'<p[^>]*>', '\n', content, flags=re.IGNORECASE)
     content = re.sub(r'<[^>]+>', ' ', content)
     content = unescape(content)
     
-    content = re.sub(r'\n{3,}', '\n\n', content)
-    content = content.strip()
+    # 空白字符处理
+    content = content.replace('\u3000', ' ')
+    content = content.replace('\t', ' ')
     
-    # 提取作者（在清理后的内容中）
-    author_match = re.search(r'记者\s+([^\s\n]+)', content)
-    author = author_match.group(1) if author_match else ""
-    
-    # 提取日期
-    date_match = re.search(r'(\d{4})[-年](\d{1,2})[-月](\d{1,2})日?', content)
-    if date_match:
-        publish_date = f"{date_match.group(1)}-{int(date_match.group(2)):02d}-{int(date_match.group(3)):02d}"
-    else:
-        publish_date = ""
-    
-    # 清理内容：移除导航文本，保留段落换行
+    # 按行清理
     lines = content.split('\n')
     cleaned_lines = []
-    prev_blank = False  # 追踪前一行是否为空
+    prev_blank = False
     
     for line in lines:
         stripped = line.strip()
@@ -168,7 +156,6 @@ def parse_article_detail(html: str) -> Dict[str, Any]:
         if re.fullmatch(r'[-=_=]{2,}', stripped):
             continue
         
-        # 处理空行：只保留一个连续的空白行
         if not stripped:
             if not prev_blank:
                 cleaned_lines.append('')
@@ -179,21 +166,84 @@ def parse_article_detail(html: str) -> Dict[str, Any]:
     
     content = '\n'.join(cleaned_lines)
     content = re.sub(r'\n{3,}', '\n\n', content)
-    content = content.strip()
+    return content.strip()
+
+
+def extract_image_url_from_page_view(page_view_url: str) -> Optional[str]:
+    """从 page_view 页面提取报纸版面图片 URL"""
+    html = fetch_page(page_view_url)
+    if not html:
+        return None
     
-    # 移除正文开头的重复标题
-    if title and title.strip():
+    # 查找主要的报纸图片（允许查询参数）
+    img_match = re.search(r'<img[^>]*src=["\']([^"\'>]+?\.(?:jpg|jpeg|png|gif)(?:\?[^"\'>]*)?)["\']', html, re.IGNORECASE)
+    if img_match:
+        img_url = img_match.group(1)
+        if not img_url.startswith('http'):
+            img_url = urllib.parse.urljoin(BASE_URL + '/dskb/', img_url)
+        return img_url
+    
+    return None
+
+
+def parse_article_detail(html: str, article_url: str = "") -> Dict[str, Any]:
+    """解析文章详情页（支持图片正文提取）"""
+    from html import unescape
+    
+    # 提取标题
+    title_match = re.search(r'<title>([^<]+)</title>', html, re.IGNORECASE)
+    title = unescape(title_match.group(1).strip()) if title_match else ""
+    title = title.replace('都市快报-', '').strip()
+    
+    # 从 body 提取文本
+    content = extract_text_from_body(html)
+    
+    # 提取作者和日期
+    author_match = re.search(r'记者\s+([^\s\n]+)', content)
+    author = author_match.group(1) if author_match else ""
+    
+    date_match = re.search(r'(\d{4})[-年](\d{1,2})[-月](\d{1,2})日?', content)
+    if date_match:
+        publish_date = f"{date_match.group(1)}-{int(date_match.group(2)):02d}-{int(date_match.group(3)):02d}"
+    else:
+        publish_date = ""
+    
+    image_url = None
+    word_count = len(content)
+    
+    # 检测是否为 iframe 框架页（正文在图片中）
+    # 查找指向 page_view_2_*.html 的 iframe
+    view_iframe_match = re.search(r'<iframe[^>]*src=["\']([^"\']*page_view_2_[^"\']+)["\'][^>]*>', html, re.IGNORECASE)
+    
+    if view_iframe_match and word_count < 100:
+        # 文本较短且有 page_view iframe，可能是图片正文（如彩票、广告等）
+        # 排除正常的短新闻（如天气预报≥100字）
+        iframe_src = view_iframe_match.group(1)
+        if not iframe_src.startswith('http'):
+            iframe_src = urllib.parse.urljoin(os.path.dirname(article_url) + '/', iframe_src)
+        
+        print(f"    检测到图片正文（文本长度 {word_count} < 100），从 {iframe_src} 提取图片...")
+        image_url = extract_image_url_from_page_view(iframe_src)
+        
+        if image_url:
+            content = image_url
+            word_count = 0  # 图片内容，无法统计字数
+    
+    # 如果是正常文本页面，移除正文开头的重复标题
+    if not image_url and title and title.strip():
         title_clean = title.strip()
         content_stripped = content.lstrip()
         if content_stripped.startswith(title_clean):
             content = content[content.find(title_clean) + len(title_clean):].lstrip()
+            word_count = len(content)
     
     return {
         'title': title,
         'author': author,
         'publish_date': publish_date,
         'content': content,
-        'word_count': len(content)
+        'word_count': word_count,
+        'image_url': image_url  # 保存图片URL（如果有）
     }
 
 
@@ -242,13 +292,14 @@ def crawl_newspaper(date_str: str, save_individual: bool = False) -> Dict[str, A
             
             detail_html = fetch_page(article['url'])
             if detail_html:
-                detail_data = parse_article_detail(detail_html)
+                detail_data = parse_article_detail(detail_html, article['url'])
                 article.update(detail_data)
             else:
                 article['content'] = ""
                 article['author'] = ""
                 article['publish_date'] = ""
                 article['word_count'] = 0
+                article['image_url'] = None
             
             article['section_code'] = section['code']
             article['section_name'] = section['name']
@@ -298,6 +349,11 @@ def crawl_newspaper(date_str: str, save_individual: bool = False) -> Dict[str, A
     
     total_words = sum(art.get('word_count', 0) for art in all_articles)
     print(f"总字数: {total_words:,}")
+    
+    # 统计图片正文
+    image_articles = sum(1 for art in all_articles if art.get('image_url'))
+    if image_articles:
+        print(f"图片正文文章: {image_articles}篇")
     
     return result
 
