@@ -1,0 +1,187 @@
+<!doctype html>
+<html>
+<head>
+   <meta charset="utf-8">
+    <!-- 如果使用的是IE且支持GCF，则使用GCF渲染，否则忽略；如果使用的是IE8或以上，则使用最高版本IE渲染，否则忽略 -->
+    <!--[if IE]><meta http-equiv="X-UA-Compatible" content="IE=edge,chrome=1"><![endif]-->
+    <!-- 使用响应式布局 -->
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <meta name="robots" content="all"/>
+    <meta name="description" content="杭州日报报业集团旗下数字报">
+    <meta name="keywords" content="数字报,杭州日报报业集团数字报,杭报集团数字报">
+	<meta name="copyright" content="杭州日报报业集团,杭报集团" />
+	<meta name="author" content="杭州日报报业集团信息技术处,杭报集团信息技术处" />
+    <!-- 禁止手机百度转码 -->
+    <meta http-equiv="Cache-Control" content="no-siteapp" />
+    <!-- Android设备浏览器设置 -->
+    <meta name="mobile-web-app-capable" content="yes">
+    <link rel="icon" sizes="192x192" href="/img/app-icon72x72@2x.png">
+    <!-- iOS设备浏览器设置 -->
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black">
+    <meta name="format-detection" content="telephone=no">
+    <meta name="apple-mobile-web-app-title" content="杭报集团数字报" />
+    <link rel="apple-touch-icon-precomposed" href="/img/app-icon72x72@2x.png">
+    <title>都市快报-2026-03-29</title>
+    <!-- 加载css -->
+    <link rel="stylesheet" href="/css/bootstrap/bootstrap.min.css">
+    <link rel="stylesheet" href="/css/bootstrap/bootstrap-datetimepicker.min.css">
+    <link rel="stylesheet" href="/css/mb.css">
+    <script type="text/javascript" src="https://hm.baidu.com/hm.js?2728b37e8892fec2dedbc96606d96c32"></script>
+    <script type="text/javascript" src="https://www.hangzhou.com.cn/extra/js/hzwtj.js"></script>
+    <script type="text/javascript" src="/js/lib/jquery.min.js"></script>
+    <script type="text/javascript" src="/js/lib/bootstrap/bootstrap-datetimepicker.min.js"></script>
+    <script type="text/javascript" src="/js/lib/bootstrap/bootstrap-datetimepicker.zh-CN.js"></script>
+    <script type="text/javascript" src="/js/com/mb.js?v=1.1"></script>
+    <script type="text/javascript">
+		$(document).ready(function() {
+			mb.scroll();
+			mb.calendar();
+			mb.load();
+		});
+	</script>
+</head>
+<body>
+	<!-- 顶部导航开始 -->
+    <nav class="navbar navbar-inverse navbar-fixed-top" role="navigation">
+        <ul class="nav navbar-nav">
+            <li><i class="icon-page"></i><a href="page_list_20260329.html" class="pages-title">版面</a></li>
+            <li class="active"><i class="icon-list"></i><a href="article_list_20260329.html">列表</a></li>
+            <li id="btn-date">
+                <i class="icon-calendar">29</i><a href="javascript:void(0)">往期</a>
+                <input type="hidden" value="2026-03-29">
+            </li>
+        </ul>
+    </nav>
+    <!-- 顶部导航结束 -->
+   <div class="page-list">
+        <div class="fixed-title" id="fixed-title">第A01版：都市快报</div>
+        <div class="title"> 第A01版：都市快报</div>
+	    <ul class="page-list">
+	    		<li><a href="article_detail_2_20260329A0119.html">“华人神探”李昌钰逝世</a></li>
+	    		<li><a href="article_detail_2_20260329A0120.html">杭州市区天气预报</a></li>
+	    </ul>
+        <div class="title"> 第A02版：中国新闻</div>
+	    <ul class="page-list">
+	    		<li><a href="article_detail_2_20260329A021.html">紧急提醒：绝非“抗累神器”，不能乱用</a></li>
+	    		<li><a href="article_detail_2_20260329A022.html">紧急提醒：这种“钱”不要用</a></li>
+	    		<li><a href="article_detail_2_20260329A024.html">杀人沟、一群猪、屙屎梁等地
+　　拟更名
+　　四川多地清理整治不规范地名</a></li>
+	    		<li><a href="article_detail_2_20260329A025.html">山西太原小店区
+　　一高层建筑着火</a></li>
+	    		<li><a href="article_detail_2_20260329A027.html">上班开粪车下班开奔驰的小伙结婚了</a></li>
+	    		<li><a href="article_detail_2_20260329A0210.html">男子借钱凑彩礼
+　　婚后却遭妻子家暴
+　　女方拒还彩礼</a></li>
+	    </ul>
+        <div class="title"> 第A03版：杭州新闻</div>
+	    <ul class="page-list">
+	    		<li><a href="article_detail_2_20260329A031.html">杭州正在打造全球首个“人机共治社区”</a></li>
+	    		<li><a href="article_detail_2_20260329A033.html">全国首部 杭州为具身智能机器人立法 5月1日起施行</a></li>
+	    		<li><a href="article_detail_2_20260329A034.html">樱花跑道进入最佳观赏期</a></li>
+	    		<li><a href="article_detail_2_20260329A036.html">杭州人惦记的这口河鲜来了</a></li>
+	    </ul>
+        <div class="title"> 第A04版：热线新闻</div>
+	    <ul class="page-list">
+	    		<li><a href="article_detail_2_20260329A041.html">早上锦昌文华二期地下架空层起火</a></li>
+	    		<li><a href="article_detail_2_20260329A043.html">杭州部分道路
+　　将采取临时交通管理</a></li>
+	    		<li><a href="article_detail_2_20260329A044.html">福彩开奖公告</a></li>
+	    		<li><a href="article_detail_2_20260329A045.html">福彩开奖公告</a></li>
+	    		<li><a href="article_detail_2_20260329A046.html">福彩开奖公告</a></li>
+	    </ul>
+        <div class="title"> 第A05版：快报为你寄思念</div>
+	    <ul class="page-list">
+	    		<li><a href="article_detail_2_20260329A051.html">来生我还要做您的女儿  </a></li>
+	    		<li><a href="article_detail_2_20260329A052.html">上橙柿互动发帖
+　　追忆故人</a></li>
+	    		<li><a href="article_detail_2_20260329A055.html">父亲一生勤劳节俭，正直善良  </a></li>
+	    		<li><a href="article_detail_2_20260329A056.html">你是当之无愧的贤妻良母  </a></li>
+	    		<li><a href="article_detail_2_20260329A057.html">爸爸妈妈，你们的爱我永远铭记在心  </a></li>
+	    		<li><a href="article_detail_2_20260329A058.html">妈妈，我好想你  </a></li>
+	    		<li><a href="article_detail_2_20260329A059.html">往有光的地方去  </a></li>
+	    		<li><a href="article_detail_2_20260329A0510.html">  </a></li>
+	    </ul>
+        <div class="title"> 第A06版：很短很新鲜</div>
+	    <ul class="page-list">
+	    		<li><a href="article_detail_2_20260329A061.html">  </a></li>
+	    		<li><a href="article_detail_2_20260329A063.html">也门胡塞武装“参战”
+　　称行动将持续到侵略停止</a></li>
+	    		<li><a href="article_detail_2_20260329A066.html">特朗普发出威胁：
+　　“下一个是古巴”</a></li>
+	    		<li><a href="article_detail_2_20260329A068.html">体彩开奖公告</a></li>
+	    		<li><a href="article_detail_2_20260329A069.html">体彩开奖公告</a></li>
+	    		<li><a href="article_detail_2_20260329A0610.html">体彩开奖公告</a></li>
+	    		<li><a href="article_detail_2_20260329A0611.html">体彩开奖公告</a></li>
+	    		<li><a href="article_detail_2_20260329A0612.html">体彩开奖公告</a></li>
+	    		<li><a href="article_detail_2_20260329A0613.html">体彩开奖公告</a></li>
+	    		<li><a href="article_detail_2_20260329A0614.html">体彩开奖公告</a></li>
+	    		<li><a href="article_detail_2_20260329A0615.html">体彩开奖公告</a></li>
+	    </ul>
+        <div class="title"> 第A07版：告别新闻</div>
+	    <ul class="page-list">
+	    		<li><a href="article_detail_2_20260329A071.html">“华人神探”李昌钰逝世：我一辈子都在做傻瓜</a></li>
+	    		<li><a href="article_detail_2_20260329A073.html">广告</a></li>
+	    </ul>
+        <div class="title"> 第A08版：天气与生活</div>
+	    <ul class="page-list">
+	    		<li><a href="article_detail_2_20260329A081.html">雷暴大风+冰雹+短时强降雨</a></li>
+	    		<li><a href="article_detail_2_20260329A084.html">11部法国电影佳作
+　　在杭州展映</a></li>
+	    		<li><a href="article_detail_2_20260329A087.html">分享踏青好去处
+　　请你喝春日咖啡</a></li>
+	    </ul>
+        <div class="title"> 第B01版：杭州Discovery</div>
+	    <ul class="page-list">
+	    		<li><a href="article_detail_2_20260329B011.html">采茶</a></li>
+	    </ul>
+        <div class="title"> 第B02版：杭州Discovery</div>
+	    <ul class="page-list">
+	    		<li><a href="article_detail_2_20260329B021.html">手工采茶、炒茶的温暖人情味
+　　永远无法被人工智能取代</a></li>
+	    </ul>
+        <div class="title"> 第B03版：狮子少年</div>
+	    <ul class="page-list">
+	    		<li><a href="article_detail_2_20260329B031.html">2026年浙江中小学生春节主题征集活动初评
+　　同学们的作品记录年味与成长</a></li>
+	    		<li><a href="article_detail_2_20260329B033.html">种子会发生什么故事？</a></li>
+	    		<li><a href="article_detail_2_20260329B035.html">作品选登</a></li>
+	    		<li><a href="article_detail_2_20260329B036.html">马年说马！杭州动物园科普进校园</a></li>
+	    </ul>
+        <div class="title"> 第B04版：狮子少年</div>
+	    <ul class="page-list">
+	    		<li><a href="article_detail_2_20260329B041.html">2026“运河人家有年味”春节主题征集活动
+　　开启现场初评</a></li>
+	    </ul>
+        <div class="title"> 第B05版：狮子少年</div>
+	    <ul class="page-list">
+	    		<li><a href="article_detail_2_20260329B051.html">狮子少年</a></li>
+	    </ul>
+        <div class="title"> 第B06版：财经新闻</div>
+	    <ul class="page-list">
+	    		<li><a href="article_detail_2_20260329B061.html">乍寒乍暖三月，浙江早熟枇杷上市</a></li>
+	    		<li><a href="article_detail_2_20260329B063.html">三个萧山人内幕交易
+　　被罚2000多万</a></li>
+	    		<li><a href="article_detail_2_20260329B064.html">A股最赚钱药企的老板是温州人</a></li>
+	    </ul>
+        <div class="title"> 第B07版：大家健康</div>
+	    <ul class="page-list">
+	    		<li><a href="article_detail_2_20260329B071.html">树兰医院中医团队每周坐诊都市快报咏芝元国医馆
+　　专门调治中老年人常见病</a></li>
+	    		<li><a href="article_detail_2_20260329B072.html">朱万平中医师行医30多年 
+　　以“丹溪抗癌方”帮助众多癌症患者重回正常生活</a></li>
+	    </ul>
+        <div class="title"> 第B08版：橙柿家</div>
+	    <ul class="page-list">
+	    		<li><a href="article_detail_2_20260329B081.html">春夏焕新
+　　下周四来佩琦直播间，给你“金”喜</a></li>
+	    		<li><a href="article_detail_2_20260329B0815.html">明前钱塘龙井
+　　口感醇厚，性价比高</a></li>
+	    		<li><a href="article_detail_2_20260329B0818.html">橙柿家旗舰店</a></li>
+	    </ul>
+   </div>
+   <div class="mask"></div>
+</body>
+</html>
+
