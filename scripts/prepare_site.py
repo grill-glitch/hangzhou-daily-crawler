@@ -23,6 +23,9 @@ def main():
         with open(md_file, 'r', encoding='utf-8') as f:
             md_content = f.read()
         
+        # Escape backticks for JavaScript template literal
+        escaped_content = md_content.replace('`', '\\`')
+        
         # Create HTML page with markdown rendering
         page_html = f'''<!DOCTYPE html>
 <html lang="zh-CN">
@@ -55,7 +58,7 @@ def main():
     <div id="content"></div>
   </div>
   <script>
-    document.getElementById('content').innerHTML = marked.parse(`{md_content.replace('`', '\\`')}`);
+    document.getElementById('content').innerHTML = marked.parse(`{escaped_content}`);
   </script>
 </body>
 </html>'''
