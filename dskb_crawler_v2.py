@@ -148,6 +148,31 @@ def parse_article_detail(html: str) -> Dict[str, Any]:
     else:
         publish_date = ""
     
+    # 清理内容：移除导航文本和多余的空白行
+    # 按行分割，过滤包含导航关键词的行
+    lines = content.split('\n')
+    cleaned_lines = []
+    for line in lines:
+        stripped = line.strip()
+        # 跳过空行或只包含空白字符的行
+        if not stripped:
+            continue
+        # 跳过导航链接行
+        if any(keyword in stripped for keyword in ['上一篇', '下一篇>>', '返回主页']):
+            continue
+        # 跳过纯分隔线（如由连字符或等号组成的行）
+        if re.fullmatch(r'[-=_=]{2,}', stripped):
+            continue
+        cleaned_lines.append(line)
+    
+    # 重新组合内容，保留段落间的换行
+    content = '\n'.join(cleaned_lines)
+    
+    # 合并连续的空白行，清理行尾空格
+    content = re.sub(r'\n{3,}', '\n\n', content)
+    content = '\n'.join(line.rstrip() for line in content.split('\n'))
+    content = content.strip()
+    
     return {
         'title': title,
         'author': author,
