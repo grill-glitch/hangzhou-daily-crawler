@@ -209,6 +209,25 @@ Add whatever helps you do your job. This is your cheat sheet.
   - `extract_short_news.py` - 提取"很短很新鲜"版面内容
   - `show_short_news.py` / `show_short_news_clean.py` / `show_short_news_full.py` - 显示短新闻的不同格式
   - `generate_summary.py` - 生成摘要
+  - `merge_to_md.py` - **将某天所有文章合并为单个 Markdown 文件（带可点击目录）**
+    ```bash
+    cd hangzhou-daily-crawler
+    # 先清理数据（可选但推荐）
+    python3 fix_navigation.py
+    
+    # 生成 Markdown（带自动目录）
+    python3 merge_to_md.py 2026-03-29
+    python3 merge_to_md.py 2026-03-29 --output docs --title "都市快报精选"
+    ```
+    输出格式：
+      - `output/dskb_YYYY-MM-DD.md` (默认输出到 `output/` 目录)
+      - 按版块分组，包含标题、作者、日期、字数、正文、原文链接
+      - 正文保留段落换行，已移除导航文本和多余空白
+      - **自动生成可点击目录**：
+        - 版块列表（含文章数统计）
+        - 详细文章列表（200篇以内显示全部，自动截断长标题）
+        - 每个版块和文章都有唯一锚点，支持快速跳转
+      - 目录使用 `slugify` 生成锚点，兼容中文、英文、数字
 
 
 
