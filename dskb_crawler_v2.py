@@ -169,6 +169,60 @@ def extract_text_from_body(html: str) -> str:
     return content.strip()
 
 
+def extract_content_from_div(html: str) -> Optional[str]:
+    """尝试从 div.content 区域提取正文（优先使用）"""
+    from html import unescape
+    
+    body_match = re.search(r'<body[^>]*>(.*?)</body>', html, re.DOTALL | re.IGNORECASE)
+    if not body_match:
+        return None
+    
+    body = body_match.group(1)
+    
+    # 查找 content div
+    content_divs = re.findall(r'<div[^>]*class=["\'][^"\']*content[^"\']*["\'][^>]*>(.*?)</div>', body, re.DOTALL | re.IGNORECASE)
+    if not content_divs:
+        return None
+    
+    # 取第一个 content div
+    raw_content = content_divs[0]
+    
+    # 清理 HTML 标签
+    content = re.sub(r'<script[^>]*>.*?</script>', '', raw_content, flags=re.DOTALL | re.IGNORECASE)
+    content = re.sub(r'<style[^>]*>.*?</style>', '', content, flags=re.DOTALL | re.IGNORECASE)
+    content = re.sub(r'<br\s*/?>', '\n', content, flags=re.IGNORECASE)
+    content = re.sub(r'</p>', '\n', content, flags=re.IGNORECASE)
+    content = re.sub(r'<p[^>]*>', '\n', content, flags=re.IGNORECASE)
+    content = re.sub(r'<[^>]+>', ' ', content)
+    content = unescape(content)
+    
+    content = content.replace('\u3000', ' ')
+    content = content.replace('\t', ' ')
+    
+    # 按行清理
+    lines = content.split('\n')
+    cleaned_lines = []
+    prev_blank = False
+    
+    for line in lines:
+        stripped = line.strip()
+        if any(keyword in stripped for keyword in ['上一篇', '下一篇>>', '返回主页']):
+            continue
+        if re.fullmatch(r'[-=_=]{2,}', stripped):
+            continue
+        if not stripped:
+            if not prev_blank:
+                cleaned_lines.append('')
+                prev_blank = True
+        else:
+            cleaned_lines.append(stripped)
+            prev_blank = False
+    
+    content = '\n'.join(cleaned_lines)
+    content = re.sub(r'\n{3,}', '\n\n', content)
+    return content.strip()
+
+
 def extract_image_url_from_page_view(page_view_url: str) -> Optional[str]:
     """从 page_view 页面提取报纸版面图片 URL"""
     html = fetch_page(page_view_url)
@@ -195,10 +249,41 @@ def parse_article_detail(html: str, article_url: str = "") -> Dict[str, Any]:
     title = unescape(title_match.group(1).strip()) if title_match else ""
     title = title.replace('都市快报-', '').strip()
     
-    # 从 body 提取文本
-    content = extract_text_from_body(html)
+    # 策略1: 优先从 div.content 提取正文（最精确）
+    content_from_div = extract_content_from_div(html)
     
-    # 提取作者和日期
+    image_url = None
+    content = ""
+    word_count = 0
+    
+    if content_from_div and len(content_from_div) >= 30:
+        # content div 提取成功且内容足够（即使有 iframe 也优先使用 div 中的文本）
+        content = content_from_div
+        word_count = len(content)
+    else:
+        # 策略2: 检查是否正文在图片中（有 page_view iframe 且 body 文本极少）
+        body_text = extract_text_from_body(html)
+        word_count = len(body_text)
+        
+        view_iframe_match = re.search(r'<iframe[^>]*src=["\']([^"\']*page_view_2_[^"\']+)["\'][^>]*>', html, re.IGNORECASE)
+        
+        if view_iframe_match and word_count < 80:
+            # 真正图片正文：文本非常短（<80字）且有 page_view iframe
+            iframe_src = view_iframe_match.group(1)
+            if not iframe_src.startswith('http'):
+                iframe_src = urllib.parse.urljoin(os.path.dirname(article_url) + '/', iframe_src)
+            
+            print(f"    检测到图片正文（文本长度 {word_count} < 80），从 {iframe_src} 提取图片...")
+            image_url = extract_image_url_from_page_view(iframe_src)
+            
+            if image_url:
+                content = image_url
+                word_count = 0
+        else:
+            # 正常文本页面
+            content = body_text
+    
+    # 提取作者和日期（在清理后的内容中）
     author_match = re.search(r'记者\s+([^\s\n]+)', content)
     author = author_match.group(1) if author_match else ""
     
@@ -208,28 +293,7 @@ def parse_article_detail(html: str, article_url: str = "") -> Dict[str, Any]:
     else:
         publish_date = ""
     
-    image_url = None
-    word_count = len(content)
-    
-    # 检测是否为 iframe 框架页（正文在图片中）
-    # 查找指向 page_view_2_*.html 的 iframe
-    view_iframe_match = re.search(r'<iframe[^>]*src=["\']([^"\']*page_view_2_[^"\']+)["\'][^>]*>', html, re.IGNORECASE)
-    
-    if view_iframe_match and word_count < 100:
-        # 文本较短且有 page_view iframe，可能是图片正文（如彩票、广告等）
-        # 排除正常的短新闻（如天气预报≥100字）
-        iframe_src = view_iframe_match.group(1)
-        if not iframe_src.startswith('http'):
-            iframe_src = urllib.parse.urljoin(os.path.dirname(article_url) + '/', iframe_src)
-        
-        print(f"    检测到图片正文（文本长度 {word_count} < 100），从 {iframe_src} 提取图片...")
-        image_url = extract_image_url_from_page_view(iframe_src)
-        
-        if image_url:
-            content = image_url
-            word_count = 0  # 图片内容，无法统计字数
-    
-    # 如果是正常文本页面，移除正文开头的重复标题
+    # 移除正文开头的重复标题（仅针对文本内容）
     if not image_url and title and title.strip():
         title_clean = title.strip()
         content_stripped = content.lstrip()
@@ -243,7 +307,7 @@ def parse_article_detail(html: str, article_url: str = "") -> Dict[str, Any]:
         'publish_date': publish_date,
         'content': content,
         'word_count': word_count,
-        'image_url': image_url  # 保存图片URL（如果有）
+        'image_url': image_url
     }
 
 
