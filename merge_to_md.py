@@ -31,6 +31,17 @@ def escape_markdown(text):
     # 在正文中，我们保留原始格式，只在标题等地方做必要处理
     return text
 
+def slugify(text):
+    """生成 Markdown 锚点友好的 slug"""
+    # 移除特殊字符，保留中文、英文、数字
+    import re
+    # 将中文、英文、数字转换为连字符分隔的小写形式
+    text = text.lower()
+    text = re.sub(r'[^\w\u4e00-\u9fff\-]+', '-', text)  # 保留中文、字母、数字、连字符
+    text = re.sub(r'-+', '-', text)  # 合并多个连字符
+    text = text.strip('-')
+    return text
+
 def generate_markdown(data, title_prefix=None):
     """生成 Markdown 内容"""
     date_str = data['date']
@@ -42,16 +53,7 @@ def generate_markdown(data, title_prefix=None):
     else:
         md_title = f"# 都市快报 {date_str} 全部文章"
     
-    lines = [
-        md_title,
-        "",
-        f"> 共 {total_sections} 个版块，{total_articles} 篇文章",
-        "",
-        "---",
-        ""
-    ]
-    
-    # 按版块分组
+    # 按版块分组并收集信息用于生成目录
     articles_by_section = {}
     for art in data['articles']:
         section_code = art['section_code']
@@ -62,16 +64,69 @@ def generate_markdown(data, title_prefix=None):
             }
         articles_by_section[section_code]['articles'].append(art)
     
+    # 生成目录
+    toc_lines = [
+        "## 📋 目录",
+        "",
+        "### 版块"
+    ]
+    
+    for section_code in sorted(articles_by_section.keys()):
+        section = articles_by_section[section_code]
+        section_slug = f"#{section_code}-{slugify(section['name'])}"
+        toc_lines.append(f"- [{section_code} {section['name']}]({section_slug}) ({len(section['articles'])} 篇)")
+    
+    toc_lines.append("")
+    
+    # 生成文章详细目录（可选，根据文章数量决定是否生成）
+    total_articles_count = len(data['articles'])
+    if total_articles_count <= 200:  # 如果文章不多，列出所有文章
+        toc_lines.append("### 文章列表")
+        toc_lines.append("")
+        
+        for section_code in sorted(articles_by_section.keys()):
+            section = articles_by_section[section_code]
+            section_slug = f"#{section_code}-{slugify(section['name'])}"
+            toc_lines.append(f"- **{section_code} {section['name']}**")
+            
+            for idx, art in enumerate(section['articles'], 1):
+                title = art['title']
+                # 限制标题长度
+                display_title = title if len(title) <= 30 else f"{title[:27]}..."
+                article_slug = f"#{section_code}-{idx:02d}-{slugify(title)}"
+                toc_lines.append(f"  - [{idx:02d}. {display_title}]({article_slug})")
+            toc_lines.append("")
+    
+    toc_lines.append("---")
+    toc_lines.append("")
+    
+    # 开始正文内容
+    lines = [
+        md_title,
+        "",
+        f"> 共 {total_sections} 个版块，{total_articles} 篇文章",
+        ""
+    ]
+    
+    # 插入目录
+    lines.extend(toc_lines)
+    
     # 按版块顺序输出（按版块代码排序）
     for section_code in sorted(articles_by_section.keys()):
         section = articles_by_section[section_code]
+        # 使用锚点ID
+        section_id = f"{section_code}-{slugify(section['name'])}"
         lines.extend([
             f"## {section_code} {section['name']}",
+            "",
+            f'<a id="{section_id}"></a>',
             ""
         ])
         
         for idx, art in enumerate(section['articles'], 1):
-            # 文章标题
+            # 文章标题（带锚点）
+            article_id = f"{section_code}-{idx:02d}-{slugify(art['title'])}"
+            lines.append(f'<a id="{article_id}"></a>')
             lines.append(f"### {idx}. {art['title']}")
             lines.append("")
             
