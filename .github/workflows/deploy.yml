@@ -14,144 +14,57 @@ jobs:
       contents: write
       pages: write
       id-token: write
-      
     steps:
-      - name: Checkout
-        uses: actions/checkout@v4
-        
-      - name: Setup Python
-        uses: actions/setup-python@v5
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
         with:
           python-version: '3.11'
-          
-      - name: Install dependencies
-        run: pip install requests
-        
-      - name: Determine date to crawl
+      - run: pip install requests
+      - name: Get yesterday's date
         id: date
-        run: |
-          DATE=$(date -d "yesterday" +%Y-%m-%d)
-          echo "date=$DATE" >> $GITHUB_OUTPUT
-          
-      - name: Crawl Hangzhou Daily
-        run: |
-          DATE="${{ steps.date.outputs.date }}"
-          echo "Crawling $DATE..."
-          python3 dskb_crawler_v2.py "$DATE"
-          
+        run: echo "date=$(date -d yesterday +%Y-%m-%d)" >> $GITHUB_OUTPUT
+      - name: Crawl
+        run: python3 dskb_crawler_v2.py ${{ steps.date.outputs.date }}
       - name: Generate summaries
+        if: exists('dskb_${{ steps.date.outputs.date }}.json')
         run: |
-          DATE="${{ steps.date.outputs.date }}"
-          if [ -f "dskb_${DATE}.json" ]; then
-            python3 generate_summary.py "$DATE" > "summary_${DATE}.txt"
-            python3 extract_short_news.py "$DATE" > "short_news_${DATE}.txt"
-          else
-            echo "No data for $DATE, skipping summary"
-          fi
-          
-      - name: Prepare site
+          python3 generate_summary.py ${{ steps.date.outputs.date }} > summary_${{ steps.date.outputs.date }}.txt
+          python3 extract_short_news.py ${{ steps.date.outputs.date }} > short_news_${{ steps.date.outputs.date }}.txt
+      - name: Build site
         run: |
-          mkdir -p _site
+          mkdir _site
           cp dskb_*.json _site/ 2>/dev/null || true
           cp summary_*.txt _site/ 2>/dev/null || true
           cp short_news_*.txt _site/ 2>/dev/null || true
-          
           cd _site
-          
-          # Generate data.json index
-          python3 << 'PYEOF'
-import json, os
-index = {}
-for f in os.listdir('.'):
-    if f.startswith('dskb_') and f.endswith('.json'):
-        date = f[5:-5]
-        with open(f, 'r', encoding='utf-8') as fp:
-            data = json.load(fp)
-        index[date] = {
-            'total_sections': data.get('total_sections', 0),
-            'total_articles': data.get('total_articles', 0),
-            'total_words': sum(a.get('word_count', 0) for a in data.get('articles', [])),
-            'sections': data.get('sections', [])
-        }
-        if os.path.exists(f'summary_{date}.txt'):
-            index[date]['summary'] = True
-        if os.path.exists(f'short_news_{date}.txt'):
-            index[date]['short_news'] = True
-with open('data.json', 'w', encoding='utf-8') as fp:
-    json.dump(index, fp, ensure_ascii=False, indent=2)
-print(f"Created data.json for {len(index)} dates")
-PYEOF
-          
-          # Generate index.html
+          python3 -c "import json,os;j={};[j.update({f[5:-5]:{'total_sections':d.get('total_sections',0),'total_articles':d.get('total_articles',0),'total_words':sum(a.get('word_count',0)for a in d.get('articles',[])),'sections':d.get('sections',[]),**({'summary':1}if os.path.exists(f'summary_{f[5:-5]}.txt')else{}),**({'short_news':1}if os.path.exists(f'short_news_{f[5:-5]}.txt')else{})})for f in os.listdir('.')if f.startswith('dskb_')and f.endswith('.json')for d in[json.load(open(f))]];open('data.json','w',encoding='utf-8').write(json.dumps(j,ensure_ascii=False,indent=2))"
           cat > index.html << 'EOF'
 <!DOCTYPE html>
-<html lang="zh-CN">
-<head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>都市快报 Digital Archive</title>
-  <style>
-    body { font-family: system-ui, sans-serif; margin: 0; padding: 20px; background: #f5f5f5; }
-    .container { max-width: 960px; margin: auto; }
-    h1 { color: #333; border-bottom: 3px solid #ff6b6b; padding-bottom: 10px; }
-    .card { background: white; padding: 20px; margin: 20px 0; border-radius: 8px; box-shadow: 0 2px 8px rgba(0,0,0,0.1); }
-    .stats { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; margin: 10px 0; }
-    .stat { text-align: center; padding: 10px; background: #f8f9fa; border-radius: 4px; }
-    .stat-value { font-size: 1.5em; font-weight: bold; }
-    .stat-label { font-size: 0.85em; color: #666; }
-    .btn { display: inline-block; margin: 5px 5px 5px 0; padding: 10px 16px; background: #ff6b6b; color: white; text-decoration: none; border-radius: 4px; }
-    .tags { margin-top: 10px; }
-    .tag { display: inline-block; background: #e9ecef; padding: 3px 8px; border-radius: 12px; margin: 2px; font-size: 0.85em; }
-  </style>
-</head>
+<html>
+<head><meta charset="utf-8"><title>Hangzhou Daily Archive</title></head>
 <body>
-  <div class="container">
-    <h1>📰 都市快报 Digital Archive</h1>
-    <div class="card">
-      <p>自动爬取《都市快报》数字报，每日更新。</p>
-      <p><strong>最新数据：</strong> $(date +%Y-%m-%d)</p>
-    </div>
-    <div id="app"></div>
-    <script>
-      fetch('data.json').then(r => r.json()).then(data => {
-        const app = document.getElementById('app');
-        Object.keys(data).sort().reverse().forEach(date => {
-          const d = data[date];
-          const card = document.createElement('div');
-          card.className = 'card';
-          const tags = d.sections ? d.sections.map(s => `<span class="tag" title="${s.name}">${s.code}</span>`).join('') : '';
-          card.innerHTML = `
-            <h2>${date}</h2>
-            <div class="stats">
-              <div class="stat"><div class="stat-value">${d.total_sections}</div><div class="stat-label">版块</div></div>
-              <div class="stat"><div class="stat-value">${d.total_articles}</div><div class="stat-label">文章</div></div>
-              <div class="stat"><div class="stat-value">${(d.total_words/10000).toFixed(1)}万</div><div class="stat-label">字数</div></div>
-            </div>
-            <div>
-              <a class="btn" href="dskb_${date}.json">📄 原始数据</a>
-              ${d.summary ? '<a class="btn" href="summary_'+date+'.txt">📋 摘要</a>' : ''}
-              ${d.short_news ? '<a class="btn" href="short_news_'+date+'.txt">⚡ 短新闻</a>' : ''}
-            </div>
-            <div class="tags">${tags}</div>
-          `;
-          app.appendChild(card);
-        });
-      }).catch(() => { document.getElementById('app').innerHTML = '<p>暂无数据</p>'; });
-    </script>
-  </div>
+<h1>Archive</h1>
+<pre id="data"></pre>
+<script>
+fetch('data.json').then(r=>r.json()).then(d=>{
+  const dates=Object.keys(d).sort().reverse();
+  document.getElementById('data').textContent=JSON.stringify(d,null,2);
+  // Simple display
+  const list=document.createElement('div');
+  dates.forEach(date=>{
+    const day=d[date];
+    const card=document.createElement('div');
+    card.innerHTML=`<h2>${date}</h2><p>Sections:${day.total_sections} Articles:${day.total_articles} Words:${(day.total_words/10000).toFixed(1)}万</p>`;
+    list.appendChild(card);
+  });
+  document.body.appendChild(list);
+});
+</script>
 </body>
 </html>
 EOF
-EOF
-
-      - name: Setup Pages
-        uses: actions/configure-pages@v4
-        
-      - name: Upload artifact
-        uses: actions/upload-pages-artifact@v3
+      - uses: actions/configure-pages@v4
+      - uses: actions/upload-pages-artifact@v3
         with:
-          path: ./_site
-          
-      - name: Deploy to GitHub Pages
-        id: deployment
-        uses: actions/deploy-pages@v4
+          path: _site
+      - uses: actions/deploy-pages@v4
