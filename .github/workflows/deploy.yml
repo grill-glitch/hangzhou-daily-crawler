@@ -37,12 +37,23 @@ jobs:
           echo "Crawling $DATE..."
           python3 dskb_crawler_v2.py "$DATE"
           
+      - name: Clean navigation artifacts
+        run: |
+          DATE="${{ steps.date.outputs.date }}"
+          if [ -f "dskb_${DATE}.json" ]; then
+            echo "Cleaning navigation artifacts..."
+            python3 fix_navigation.py
+          else
+            echo "No data for $DATE, skipping cleanup"
+          fi
+          
       - name: Generate summaries
         run: |
           DATE="${{ steps.date.outputs.date }}"
           if [ -f "dskb_${DATE}.json" ]; then
             python3 generate_summary.py "$DATE" > "summary_${DATE}.txt"
             python3 extract_short_news.py "$DATE" > "short_news_${DATE}.txt"
+            python3 merge_to_md.py "$DATE" --output _site
           else
             echo "No data for $DATE, skipping summary"
           fi

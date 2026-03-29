@@ -24,5 +24,9 @@ jobs:
         run: |
           python3 -c "print('Hello from GitHub Actions!')"
           
+      - name: Test crawler import
+        run: |
+          python3 -c "import dskb_crawler_v2; print('Crawler module OK')"
+          
       - name: List files
         run: ls -la
