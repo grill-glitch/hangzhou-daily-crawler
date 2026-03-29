@@ -1,7 +1,7 @@
 name: Test Crawl
 
 on:
-  workflow_dispatch:
+  workflow_dispatch: {}
   schedule:
     - cron: '30 2 * * *'
 

@@ -4,7 +4,7 @@ on:
   schedule:
     # 每天凌晨 2:30 运行（抓取前一天的报纸）
     - cron: '30 2 * * *'
-  workflow_dispatch:  # 允许手动触发
+  workflow_dispatch: {}  # 允许手动触发
   push:
     branches: [ master, main ]
 
