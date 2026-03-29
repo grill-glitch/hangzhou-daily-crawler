@@ -4,67 +4,11 @@ on:
   workflow_dispatch: {}
   schedule:
     - cron: '30 2 * * *'
-  push:
-    branches: [master, main]
 
 jobs:
   deploy:
     runs-on: ubuntu-latest
-    permissions:
-      contents: write
-      pages: write
-      id-token: write
     steps:
       - uses: actions/checkout@v4
-      - uses: actions/setup-python@v5
-        with:
-          python-version: '3.11'
-      - run: pip install requests
-      - name: Get yesterday's date
-        id: date
-        run: echo "date=$(date -d yesterday +%Y-%m-%d)" >> $GITHUB_OUTPUT
-      - name: Crawl
-        run: python3 dskb_crawler_v2.py ${{ steps.date.outputs.date }}
-      - name: Generate summaries
-        if: exists('dskb_${{ steps.date.outputs.date }}.json')
-        run: |
-          python3 generate_summary.py ${{ steps.date.outputs.date }} > summary_${{ steps.date.outputs.date }}.txt
-          python3 extract_short_news.py ${{ steps.date.outputs.date }} > short_news_${{ steps.date.outputs.date }}.txt
-      - name: Build site
-        run: |
-          mkdir _site
-          cp dskb_*.json _site/ 2>/dev/null || true
-          cp summary_*.txt _site/ 2>/dev/null || true
-          cp short_news_*.txt _site/ 2>/dev/null || true
-          cd _site
-          python3 -c "import json,os;j={};[j.update({f[5:-5]:{'total_sections':d.get('total_sections',0),'total_articles':d.get('total_articles',0),'total_words':sum(a.get('word_count',0)for a in d.get('articles',[])),'sections':d.get('sections',[]),**({'summary':1}if os.path.exists(f'summary_{f[5:-5]}.txt')else{}),**({'short_news':1}if os.path.exists(f'short_news_{f[5:-5]}.txt')else{})})for f in os.listdir('.')if f.startswith('dskb_')and f.endswith('.json')for d in[json.load(open(f))]];open('data.json','w',encoding='utf-8').write(json.dumps(j,ensure_ascii=False,indent=2))"
-          cat > index.html << 'EOF'
-<!DOCTYPE html>
-<html>
-<head><meta charset="utf-8"><title>Hangzhou Daily Archive</title></head>
-<body>
-<h1>Archive</h1>
-<pre id="data"></pre>
-<script>
-fetch('data.json').then(r=>r.json()).then(d=>{
-  const dates=Object.keys(d).sort().reverse();
-  document.getElementById('data').textContent=JSON.stringify(d,null,2);
-  // Simple display
-  const list=document.createElement('div');
-  dates.forEach(date=>{
-    const day=d[date];
-    const card=document.createElement('div');
-    card.innerHTML=`<h2>${date}</h2><p>Sections:${day.total_sections} Articles:${day.total_articles} Words:${(day.total_words/10000).toFixed(1)}万</p>`;
-    list.appendChild(card);
-  });
-  document.body.appendChild(list);
-});
-</script>
-</body>
-</html>
-EOF
-      - uses: actions/configure-pages@v4
-      - uses: actions/upload-pages-artifact@v3
-        with:
-          path: _site
-      - uses: actions/deploy-pages@v4
+      - name: Test
+        run: echo "Hello from Deploy workflow"
