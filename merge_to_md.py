@@ -27,8 +27,11 @@ def load_data(date_str):
         return json.load(f)
 
 def escape_markdown(text):
-    """转义 Markdown 特殊字符（在代码块内不需要，但为了安全起见）"""
-    # 在正文中，我们保留原始格式，只在标题等地方做必要处理
+    """转义 Markdown 特殊字符"""
+    if not text:
+        return ""
+    # 替换波浪号为短横线，避免渲染为删除线
+    text = text.replace('~', '-')
     return text
 
 def slugify(text):
@@ -68,25 +71,13 @@ def generate_markdown(data, title_prefix=None):
     toc_lines = [
         "## 📋 目录",
         "",
-        "### 版块"
     ]
     
-    for section_code in sorted(articles_by_section.keys()):
-        section = articles_by_section[section_code]
-        section_slug = f"#{section_code}-{slugify(section['name'])}"
-        toc_lines.append(f"- [{section_code} {section['name']}]({section_slug}) ({len(section['articles'])} 篇)")
-    
-    toc_lines.append("")
-    
-    # 生成文章详细目录（可选，根据文章数量决定是否生成）
+    # 生成文章详细目录（直接列出所有文章，按版块分组）
     total_articles_count = len(data['articles'])
     if total_articles_count <= 200:  # 如果文章不多，列出所有文章
-        toc_lines.append("### 文章列表")
-        toc_lines.append("")
-        
         for section_code in sorted(articles_by_section.keys()):
             section = articles_by_section[section_code]
-            section_slug = f"#{section_code}-{slugify(section['name'])}"
             toc_lines.append(f"- **{section_code} {section['name']}**")
             
             for idx, art in enumerate(section['articles'], 1):
@@ -142,6 +133,8 @@ def generate_markdown(data, title_prefix=None):
             # 正文内容
             content = art.get('content', '').strip()
             if content:
+                # 转义特殊字符
+                content = escape_markdown(content)
                 lines.append(content)
                 lines.append("")
             
