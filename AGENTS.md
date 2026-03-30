@@ -52,6 +52,16 @@ Capture what matters. Decisions, context, things to remember. Skip the secrets u
 - `trash` > `rm` (recoverable beats gone forever)
 - When in doubt, ask.
 
+## Git Operations
+
+- **NEVER push the entire Workspace root directory to a remote repository**
+- Each project/subdirectory should have its own standalone git repository
+- When working on a project, operate within that project's own git repository
+- Do not add submodules or include other projects' files in commits unless explicitly required
+- Check `git status` and `git remote -v` before pushing to ensure you're in the right repository
+- If the workspace root has a git repository, be extra cautious - it likely contains other projects' untracked files
+- Use `git rev-parse --show-prefix` to confirm current working directory relative to repository root
+
 ## External vs Internal
 
 **Safe to do freely:**
