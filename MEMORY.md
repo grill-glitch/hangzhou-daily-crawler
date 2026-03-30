@@ -87,6 +87,18 @@
   - 创建辅助脚本 `fix_navigation.py` 用于清理已有 JSON 文件
   - 待执行：运行清理脚本或重新抓取数据以应用修复
 
+## Hugo 站点重构（2026-03-30）
+- **问题**：之前的 Hugo 配置过于复杂，使用 Quint 主题和自定义 cards partial，效果不理想
+- **简化方案**：
+  - 恢复使用 PaperMod 主题（标准、稳定）
+  - 报纸 md 文件放到 `content/posts/` 目录，自动识别为博客文章
+  - 首页自动显示文章卡片列表（标题 + 摘要）
+  - 手动测试时添加 `summary` 字段以控制摘要长度
+- **GitHub Actions 修复**：
+  - 修改复制路径：`dskb_*.md` → `hugo/content/posts/`
+  - 手动触发 workflow 测试成功
+- **部署**：https://grill-glitch.github.io/hangzhou-daily-crawler/
+
 ## 待办事项
 - ✅ PR #3355 CodeRabbit 审查问题已修复并验证
 - Crypto101 项目：继续翻译剩余 TODO 章节
