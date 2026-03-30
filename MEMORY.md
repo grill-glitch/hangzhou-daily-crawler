@@ -98,6 +98,10 @@
   - 修改复制路径：`dskb_*.md` → `hugo/content/posts/`
   - 手动触发 workflow 测试成功
 - **部署**：https://grill-glitch.github.io/hangzhou-daily-crawler/
+- **后续改进**（2026-03-30 晚）：
+  - 移除目录中的"版块"分组标题，只保留文章列表（更简洁）
+  - `merge_to_md.py` 转义波浪号 `~` 为短横线 `-`，避免 Markdown 渲染为删除线
+  - Hugo 配置添加 RSS 输出（`outputs.home = ["HTML", "RSS"]`）
 
 ## 待办事项
 - ✅ PR #3355 CodeRabbit 审查问题已修复并验证
