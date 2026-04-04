@@ -158,9 +158,9 @@ jobs:
           ls -la source/
           echo "检查 source/_posts："
           ls -la source/_posts/ | head -10
-          hexo --version
-          hexo clean
-          hexo generate -u
+          npx hexo --version
+          npx hexo clean
+          npx hexo generate -u
           echo "public_dir=public" >> $GITHUB_ENV
 
       - name: Check public dir
