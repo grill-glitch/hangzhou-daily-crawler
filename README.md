@@ -13,7 +13,6 @@
 ### 抓取指定日期数据
 
 ```bash
-cd hangzhou-daily-crawler
 python3 dskb_crawler_v2.py 2026-03-29
 ```
 
