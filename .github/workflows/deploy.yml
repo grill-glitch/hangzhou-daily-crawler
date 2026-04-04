@@ -163,14 +163,26 @@ jobs:
           hexo generate -u
           echo "public_dir=public" >> $GITHUB_ENV
 
+      - name: Check public dir
+        id: check_public
+        run: |
+          if [ -d public ]; then
+            echo "public_exists=true" >> $GITHUB_OUTPUT
+          else
+            echo "public_exists=false" >> $GITHUB_OUTPUT
+          fi
+
       - name: 设置 Pages 部署
+        if: steps.check_public.outputs.public_exists == 'true'
         uses: actions/configure-pages@v4
 
       - name: 上传 Pages Artifact
+        if: steps.check_public.outputs.public_exists == 'true'
         uses: actions/upload-pages-artifact@v3
         with:
           path: './public'
 
       - name: 部署到 GitHub Pages
+        if: steps.check_public.outputs.public_exists == 'true'
         id: deployment
         uses: actions/deploy-pages@v4
