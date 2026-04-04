@@ -68,6 +68,15 @@ jobs:
           # 清理旧的当日文章（避免重复）
           rm -f source/_posts/*${{ steps.date.outputs.date }}*.md
 
+      - name: 检查文件列表
+        run: |
+          echo "当前目录：$(pwd)"
+          ls -la
+          echo "检查 JSON 文件："
+          ls -la dskb_*.json 2>/dev/null || echo "未找到 dskb_*.json"
+          echo "检查单篇文章目录："
+          ls -la dskb_${{ steps.date.outputs.date }}/ 2>/dev/null || echo "未找到单篇文章目录"
+
       - name: 转换为 Hexo 博客文章
         run: |
           python3 << 'EOF'
