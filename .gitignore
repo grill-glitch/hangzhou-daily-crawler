@@ -31,6 +31,10 @@ dskb_*/
 summary_*.txt
 short_news_*.txt
 
+# Hugo 构建输出
+public/
+.hugo_build.lock
+
 # 例外：example 目录中的测试文件
 !example/
 !example/dskb_*.json
@@ -39,3 +43,13 @@ short_news_*.txt
 # 系统文件
 .DS_Store
 Thumbs.db
+
+# OpenClaw workspace files
+.openclaw/
+AGENTS.md
+HEARTBEAT.md
+IDENTITY.md
+MEMORY.md
+SOUL.md
+TOOLS.md
+USER.md

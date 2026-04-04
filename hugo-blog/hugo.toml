@@ -1,0 +1,15 @@
+baseURL = 'https://grill-glitch.github.io/hangzhou-daily-crawler/'
+languageCode = 'zh-CN'
+title = '都市快报每日精选'
+theme = 'hugo-book'
+
+[params]
+  BookTheme = 'auto'
+  BookToC = true
+  BookComments = false
+
+[menu]
+  [[menu.before]]
+    name = "首页"
+    url = "/"
+    weight = 1

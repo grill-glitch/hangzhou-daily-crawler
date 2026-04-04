@@ -32,22 +32,11 @@ jobs:
       - name: 检出代码
         uses: actions/checkout@v4
 
-      - name: 安装 Node.js
-        uses: actions/setup-node@v4
-        with:
-          node-version: '20'
-          cache: 'npm'
-
       - name: 安装 Python
         uses: actions/setup-python@v5
         with:
           python-version: '3.11'
           cache: 'pip'
-
-      - name: 安装 Hexo CLI 和依赖
-        run: |
-          npm install -g hexo-cli
-          npm ci
 
       - name: 安装 Python 依赖
         run: |
@@ -77,7 +66,7 @@ jobs:
           echo "检查单篇文章目录："
           ls -la dskb_${{ steps.date.outputs.date }}/ 2>/dev/null || echo "未找到单篇文章目录"
 
-      - name: 转换为 Hexo 博客文章
+      - name: 转换为 Hugo 博客文章
         run: |
           python3 << 'EOF'
           import json
@@ -118,16 +107,15 @@ jobs:
               filename = f"{date_str}-{safe_title}.md"
               filepath = os.path.join(posts_dir, filename)
 
-              # Hexo Front Matter (YAML-safe)
+              # Hugo Front Matter (YAML)
               front_matter = (
                   '---\n'
-                  f"title: {json.dumps(title, ensure_ascii=False)}\n"
-                  f"date: {publish_date} 12:00:00\n"
-                  f"author: {json.dumps(author, ensure_ascii=False)}\n"
-                  f"categories: [{json.dumps(section, ensure_ascii=False)}]\n"
-                  f"tags: [{json.dumps('都市快报', ensure_ascii=False)}, {json.dumps('杭州新闻', ensure_ascii=False)}]\n"
-                  "layout: post\n"
-                  "---\n\n"
+                  f'title: "{title}"\n'
+                  f'date: {publish_date} 12:00:00 +08:00\n'
+                  f'author: "{author}"\n'
+                  f'categories: ["{section}"]\n'
+                  f'tags: ["都市快报", "杭州新闻"]\n'
+                  '---\n\n'
               )
 
               # Markdown 内容
@@ -148,20 +136,16 @@ jobs:
           print(f"\n✅ 共转换 {len(data['articles'])} 篇文章")
           EOF
 
-      - name: 构建 Hexo 站点
+      - name: 复制文章到 Hugo 站点
         run: |
-          echo "当前工作目录：$(pwd)"
-          ls -la
-          echo "检查 _config.yml："
-          test -f _config.yml && echo "_config.yml 存在" || echo "_config.yml 不存在！"
-          echo "检查 source 目录："
-          ls -la source/
-          echo "检查 source/_posts："
-          ls -la source/_posts/ | head -10
-          npx hexo --version
-          npx hexo clean
-          npx hexo generate -u
-          echo "public_dir=public" >> $GITHUB_ENV
+          mkdir -p hugo-blog/content/posts
+          cp -r source/_posts/* hugo-blog/content/posts/
+
+      - name: 构建 Hugo 站点
+        run: |
+          cd hugo-blog
+          hugo version
+          hugo --gc --minify -d ../public
 
       - name: Check public dir
         id: check_public
