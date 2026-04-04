@@ -1,0 +1,16 @@
+{
+  "name": "hangzhou-daily-blog",
+  "version": "1.0.0",
+  "private": true,
+  "scripts": {
+    "crawl": "python3 dskb_crawler_v2.py",
+    "build": "python3 merge_to_md.py",
+    "deploy": "hexo generate && hexo deploy",
+    "start": "hexo server"
+  },
+  "dependencies": {
+    "hexo": "^7.0.0",
+    "hexo-deployer-git": "^4.0.0",
+    "hexo-renderer-marked": "^7.0.0"
+  }
+}
