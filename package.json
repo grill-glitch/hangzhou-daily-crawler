@@ -2,6 +2,9 @@
   "name": "hangzhou-daily-blog",
   "version": "1.0.0",
   "private": true,
+  "hexo": {
+    "version": "7.3.0"
+  },
   "scripts": {
     "crawl": "python3 dskb_crawler_v2.py",
     "build": "python3 merge_to_md.py",
