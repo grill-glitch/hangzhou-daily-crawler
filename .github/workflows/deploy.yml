@@ -150,7 +150,8 @@ jobs:
 
       - name: 构建 Hexo 站点
         run: |
-          hexo generate
+          hexo clean
+          hexo generate -u
           echo "public_dir=public" >> $GITHUB_ENV
 
       - name: 设置 Pages 部署
