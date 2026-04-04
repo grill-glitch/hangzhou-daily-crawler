@@ -119,7 +119,6 @@ layout: post
 ---
 
 """
-""
 
               # Markdown 内容
               md_content = f"{front_matter}# {title}\n\n"
