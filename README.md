@@ -1,163 +1,65 @@
-# 都市快报数字报爬虫
+# 杭州都市快报爬虫
 
-[![Python 3.8+](https://img.shields.io/badge/python-3.8+-blue.svg)](https://www.python.org/downloads/)
-[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
+抓取杭州都市快报数字版每日新闻内容，生成结构化 JSON 和 Markdown 数据。
 
-专门针对《都市快报》数字报（hzdaily.hangzhou.com.cn）的网络爬虫，支持完整抓取指定日期的所有版块内容，包括文章详情、作者、字数等元数据。
+## 文件说明
 
-## ✨ 特性
+- `dskb_crawler.py` - 原始版本爬虫
+- `dskb_crawler_v2.py` - 主版本爬虫（推荐使用）
+- `merge_to_md.py` - 将某天所有文章合并为单个 Markdown 文件（带可点击目录）
 
-- 🎯 **完整抓取**：自动发现所有版块（A/B版共16个）
-- 🔄 **智能解析**：基于iframe的版块结构，稳定可靠
-- 📊 **数据丰富**：标题、作者、发布日期、正文、字数统计
-- 💾 **多种输出**：JSON汇总 + Markdown文件 + HTML页面
-- 🚀 **极简使用**：单命令完成抓取
-- 📖 **Web阅读**：自动生成美观的HTML页面，支持Markdown渲染
+## 使用方法
 
-## 📦 项目结构
-
-```
-hangzhou-daily-crawler/
-├── dskb_crawler_v2.py   # 主爬虫脚本
-├── generate_summary.py  # 内容摘要生成器
-├── extract_short_news.py # 提取"很短很新鲜"版面
-├── show_short_news*.py  # 短新闻展示工具
-├── dskb_YYYY-MM-DD.json # 抓取结果（示例）
-└── README.md
-```
-
-## 🚀 快速开始
-
-### 安装依赖
+### 抓取指定日期数据
 
 ```bash
-pip install requests
+cd hangzhou-daily-crawler
+python3 dskb_crawler_v2.py 2026-03-29
 ```
 
-### 基本使用
+输出：
+- `dskb_YYYY-MM-DD.json` - 所有文章的结构化数据
+- `dskb_YYYY-MM-DD/` 目录 - 单篇文章 JSON 文件（可选）
+
+### 生成 Markdown（带自动目录）
 
 ```bash
-# 抓取指定日期（只生成汇总JSON）
-python3 dskb_crawler_v2.py 2026-03-28
-
-# 抓取并保存单篇文章
-python3 dskb_crawler_v2.py 2026-03-28 --individual
-
-# 指定输出目录
-python3 dskb_crawler_v2.py 2026-03-28 --output-dir ./output
+python3 merge_to_md.py 2026-03-29 [--output docs] [--title "标题"]
 ```
 
-## 📋 输出格式
+输出：
+- `output/dskb_YYYY-MM-DD.md` - 合并后的 Markdown 文件
+- 按版块分组，包含标题、作者、字数、正文和原文链接
+- 自动生成可点击目录（版块列表 + 详细文章列表）
 
-### 汇总 JSON (`dskb_YYYY-MM-DD.json`)
-
-```json
-{
-  "date": "2026-03-28",
-  "total_sections": 16,
-  "total_articles": 59,
-  "total_words": 77687,
-  "sections": [
-    {
-      "code": "A01",
-      "name": "都市快报",
-      "url": "https://hzdaily.hangzhou.com.cn/..."
-    }
-  ],
-  "articles": [
-    {
-      "section_code": "A01",
-      "section_name": "都市快报",
-      "title": "文章标题",
-      "url": "https://...",
-      "author": "记者姓名",
-      "publish_date": "2026-03-28",
-      "content": "正文内容...",
-      "word_count": 1234
-    }
-  ]
-}
-```
-
-### 单篇文章文件（可选）
-
-当使用 `--individual` 参数时，会在日期目录下保存每篇文章为独立JSON文件：
-
-```
-dskb_2026-03-28/
-├── article_A01_001.json
-├── article_A02_001.json
-└── ...
-```
-
-## 🛠️ 辅助工具
-
-### 生成内容摘要
+### 清理已有数据中的导航文本
 
 ```bash
-python3 generate_summary.py 2026-03-28
+python3 fix_navigation.py
 ```
 
-输出统计信息、版块分布、重点新闻、长文章Top5等。
+## 输出格式
 
-### 提取"很短很新鲜"版面
+JSON 数据结构包含以下字段：
+- `title`: 文章标题
+- `author`: 作者
+- `publish_date`: 发布日期
+- `content`: 正文内容（已清理导航文本）
+- `word_count`: 字数统计
+- `section`: 所属版块
+- `original_url`: 原文链接
 
-```bash
-python3 extract_short_news.py 2026-03-28
-```
+## 依赖
 
-列出该版面的所有短新闻标题和预览。
+- Python 3.x
+- requests
 
-## 🔍 技术细节
+## 注意事项
 
-### 网站结构
+- 请求间隔 1 秒，避免对服务器造成压力
+- 数据来源：hzdaily.hangzhou.com.cn
+- 请遵守robots.txt并尊重版权
 
-- **版块列表页**: `https://hzdaily.hangzhou.com.cn/dskb/YYYY/MM/DD/page_detail_2_YYYYMMDD[版块].html`
-  - 嵌入iframe指向 `article_list_2_YYYYMMDD[版块].html`
-- **文章列表页**: `article_list_2_YYYYMMDD[版块].html`
-- **文章详情页**: `article_detail_2_YYYYMMDD[版块][序号].html`
+## License
 
-### 核心流程
-
-1. 构造所有版块的 `page_detail` URL（A01-A08, B01-B08）
-2. 下载页面，提取iframe的 `src`（`article_list`）
-3. 解析文章列表页，提取所有文章链接
-4. 并发下载文章详情（带延迟避免被封）
-5. 提取标题、作者、内容、字数
-6. 保存数据
-
-## 🌐 在线浏览
-
-项目已部署到 GitHub Pages，可以通过以下链接浏览最新爬取的数据：
-
-**主页**: https://grill-glitch.github.io/hangzhou-daily-crawler/
-
-主页展示了所有可用的日期，点击日期卡片可以：
-- 📄 查看原始 JSON 数据
-- 📖 阅读渲染后的文章页面（Markdown 转 HTML）
-- 📋 查看内容摘要
-- ⚡ 查看短新闻快讯
-
-每个日期的文章页面会渲染合并后的 Markdown 文件，提供更好的阅读体验。
-
-- ⏱️ **请求延迟**：默认0.5秒间隔，避免对服务器造成压力
-- 📈 **User-Agent**：已设置为桌面浏览器标识
-- 🔒 **仅用于学习研究**：请遵守网站robots.txt和服务条款
-- 📅 **历史数据**：仅能抓取网站还保留数字报的日期
-
-## 🤝 贡献
-
-欢迎提交Issue和Pull Request！
-
-## 📄 License
-
-MIT License - 详见 [LICENSE](LICENSE) 文件
-
-## 🙏 致谢
-
-- 数据来源：[杭州日报](https://hzdaily.hangzhou.com.cn)
-- 开发工具：Python 3.8+, requests
-
----
-
-**⚠️ 免责声明**：本工具仅供学习和研究使用。使用者需自行遵守相关法律法规和网站的使用条款。作者不对使用本工具产生的任何后果负责。
+MIT

@@ -31,6 +31,11 @@ dskb_*/
 summary_*.txt
 short_news_*.txt
 
+# 例外：example 目录中的测试文件
+!example/
+!example/dskb_*.json
+!example/dskb_*/
+
 # 系统文件
 .DS_Store
 Thumbs.db
