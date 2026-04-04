@@ -108,17 +108,17 @@ jobs:
               filename = f"{date_str}-{safe_title}.md"
               filepath = os.path.join(posts_dir, filename)
 
-              # Hexo Front Matter
-              front_matter = f"""---
-title: {title}
-date: {publish_date} 12:00:00
-author: {author}
-categories: [{section}]
-tags: [都市快报, 杭州新闻]
-layout: post
----
-
-"""
+              # Hexo Front Matter (YAML-safe with json.dumps)
+              front_matter = (
+                  '---\n'
+                  f"title: {json.dumps(title, ensure_ascii=False)}\n"
+                  f"date: {publish_date} 12:00:00\n"
+                  f"author: {json.dumps(author, ensure_ascii=False)}\n"
+                  f"categories: [{json.dumps(section, ensure_ascii=False)}]\n"
+                  f"tags: [{json.dumps('都市快报', ensure_ascii=False)}, {json.dumps('杭州新闻', ensure_ascii=False)}]\n"
+                  "layout: post\n"
+                  "---\n\n"
+              )
 
               # Markdown 内容
               md_content = f"{front_matter}# {title}\n\n"
