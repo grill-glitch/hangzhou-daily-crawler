@@ -1,63 +1,91 @@
-# 杭州都市快报爬虫
+# 都市快报 RSS 订阅服务 (neo 分支)
 
-抓取杭州都市快报数字版每日新闻内容，生成结构化 JSON 和 Markdown 数据。
+## 项目理念
 
-## 文件说明
+本项目的核心目标是：
 
-- `dskb_crawler.py` - 原始版本爬虫
-- `dskb_crawler_v2.py` - 主版本爬虫（推荐使用）
-- `merge_to_md.py` - 将某天所有文章合并为单个 Markdown 文件（带可点击目录）
+1. **版权保护** - 不全文展示，仅提供标题、摘要和原文链接，引导用户访问官方来源
+2. **RSS 订阅** - 类似 RSSHub，为都市快报提供稳定可靠的 RSS 订阅服务
+3. **日期导航** - 点击任意日期报纸，显示该日期的文章列表页
+4. **简洁高效** - 使用 Python FastAPI，无需静态站点构建，快速响应
 
-## 使用方法
+## 架构设计
 
-### 抓取指定日期数据
+- **数据层**：爬虫抓取 → JSON 格式存储（`data/dskb_*.json`）
+- **服务层**：FastAPI 提供：
+  - 首页 `/` - 所有可用日期列表
+  - 每日页面 `/daily/YYYY-MM-DD` - 该日文章列表
+  - RSS 订阅 `/rss?date=YYYY-MM-DD` - RSS 2.0 feed
+- **视图层**：Jinja2 模板渲染简洁 HTML 页面
 
-```bash
-python3 dskb_crawler_v2.py 2026-03-29
-```
+## 快速开始
 
-输出：
-- `dskb_YYYY-MM-DD.json` - 所有文章的结构化数据
-- `dskb_YYYY-MM-DD/` 目录 - 单篇文章 JSON 文件（可选）
-
-### 生成 Markdown（带自动目录）
-
-```bash
-python3 merge_to_md.py 2026-03-29 [--output docs] [--title "标题"]
-```
-
-输出：
-- `output/dskb_YYYY-MM-DD.md` - 合并后的 Markdown 文件
-- 按版块分组，包含标题、作者、字数、正文和原文链接
-- 自动生成可点击目录（版块列表 + 详细文章列表）
-
-### 清理已有数据中的导航文本
+### 安装依赖
 
 ```bash
-python3 fix_navigation.py
+pip install -r requirements.txt
 ```
 
-## 输出格式
+### 运行爬虫抓取数据
 
-JSON 数据结构包含以下字段：
-- `title`: 文章标题
-- `author`: 作者
-- `publish_date`: 发布日期
-- `content`: 正文内容（已清理导航文本）
-- `word_count`: 字数统计
-- `section`: 所属版块
-- `original_url`: 原文链接
+```bash
+python3 dskb_crawler_v2.py 2026-04-04
+```
 
-## 依赖
+数据将保存在 `data/dskb_YYYY-MM-DD.json`
 
-- Python 3.x
-- requests
+### 启动 Web 服务
+
+```bash
+uvicorn app:app --reload --host 0.0.0.0 --port 8000
+```
+
+访问：
+- 首页：http://localhost:8000/
+- 2026-04-04 文章列表：http://localhost:8000/daily/2026-04-04
+- RSS 订阅：http://localhost:8000/rss?date=2026-04-04
+
+## 页面示例
+
+**首页**（所有日期）：
+```
+https://mdaily.hangzhou.com.cn/
+    ├── 2026-04-04
+    ├── 2026-04-03
+    └── ...
+```
+
+**每日页面**（类似 mdaily.hangzhou.com.cn 结构）：
+```
+https://mdaily.hangzhou.com.cn/dskb/2026/04/04/article_list_20260404.html
+    - 显示该日所有文章标题、作者、版块、摘要
+    - 点击标题跳转至原文链接
+```
+
+## API 接口
+
+- `GET /api/dates` - 获取所有有数据的日期列表
+- `GET /api/articles/{date_str}` - 获取指定日期的文章数据（JSON）
+
+## 部署建议
+
+- **Vercel / Railway / Heroku** - 一键部署，自动 HTTPS
+- **自托管** - 使用 systemd 或 docker-compose
+- **GitHub Pages** - 不适用（需要动态服务端渲染）
 
 ## 注意事项
 
-- 请求间隔 1 秒，避免对服务器造成压力
-- 数据来源：hzdaily.hangzhou.com.cn
-- 请遵守robots.txt并尊重版权
+- ⚠️ **版权说明**：本服务仅提供元数据和链接，不展示全文，请用户访问官方来源阅读完整内容
+- 📅 **数据更新**：建议配合 GitHub Actions 每日自动抓取并部署
+- 🔗 **原文链接**：所有文章链接指向 hzdaily.hangzhou.com.cn 官方来源
+
+## 技术栈
+
+- Python 3.11+
+- FastAPI - Web 框架
+- Jinja2 - 模板引擎
+- Feedgen - RSS 生成
+- Uvicorn - ASGI 服务器
 
 ## License
 

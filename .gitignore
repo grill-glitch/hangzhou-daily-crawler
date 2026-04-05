@@ -23,15 +23,13 @@ coverage.xml
 *.swp
 *.swo
 
-# 爬虫输出数据
-_site/
-output/
-dskb_*.json
-dskb_*/
+# 爬虫输出数据（neo 分支：保留 data 目录用于 RSS 服务）
+# data/ 目录下的 JSON 文件会被版本控制，作为历史存档
+_daily/  # 临时抓取目录
 summary_*.txt
 short_news_*.txt
 
-# Hugo 构建输出
+# Hugo 构建输出（仅旧分支使用）
 public/
 .hugo_build.lock
 
