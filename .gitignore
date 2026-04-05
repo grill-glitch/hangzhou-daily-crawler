@@ -44,12 +44,11 @@ public/
 .DS_Store
 Thumbs.db
 
-# OpenClaw workspace files
+# OpenClaw workspace files (local config)
 .openclaw/
 AGENTS.md
 HEARTBEAT.md
 IDENTITY.md
-MEMORY.md
 SOUL.md
 TOOLS.md
 USER.md

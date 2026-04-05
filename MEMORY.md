@@ -59,6 +59,19 @@
 - `hugo-blog/themes/hugo-book/` - 主题文件
 - 构建命令：`hugo --gc --minify`（输出到 `public/`）
 
+### GitHub Actions 工作流演进与问题修复（2026-04-05）
+- **Hugo 安装**：工作流中显式下载并安装 Hugo extended（解决 `hugo: command not found`）
+- **周末/节假日容错**：
+  - 爬虫失败时 `continue-on-error: true`
+  - 转换步骤检查 JSON 文件存在性，缺失则跳过
+  - 确保无报纸时工作流仍成功完成，不阻塞后续部署
+
+### 当前工作流状态
+- **频率**：每日 UTC 2:00（北京时间 10:00）自动运行
+- **健壮性**：处理周末/节假日无数据场景
+- **部署**：成功构建并推送至 GitHub Pages（包括 2026-04-04 的历史文章）
+
+
 ### 仓库结构调整（2026-04-04）
 - **问题**：文件嵌套在 `hangzhou-daily-crawler/` 子目录，不符合 GitHub Pages 要求
 - **解决**：将所有项目文件移动到仓库根目录
