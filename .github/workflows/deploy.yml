@@ -141,11 +141,20 @@ jobs:
           mkdir -p hugo-blog/content/posts
           cp -r source/_posts/* hugo-blog/content/posts/
 
+      - name: 安装 Hugo
+        run: |
+          HUGO_VERSION=$(curl -s https://api.github.com/repos/gohugoio/hugo/releases/latest | grep tag_name | cut -d '"' -f 4)
+          echo "Installing Hugo $HUGO_VERSION"
+          curl -L https://github.com/gohugoio/hugo/releases/download/$HUGO_VERSION/hugo_extended_${HUGO_VERSION#v}_Linux-64bit.tar.gz -o hugo.tar.gz
+          tar -xzf hugo.tar.gz
+          sudo mv hugo /usr/local/bin/
+          hugo version
+
       - name: 构建 Hugo 站点
         run: |
           cd hugo-blog
-          hugo version
           hugo --gc --minify -d ../public
+
 
       - name: Check public dir
         id: check_public
