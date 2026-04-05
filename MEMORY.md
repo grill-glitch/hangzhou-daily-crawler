@@ -59,6 +59,13 @@
 - `hugo-blog/themes/hugo-book/` - 主题文件
 - 构建命令：`hugo --gc --minify`（输出到 `public/`）
 
+### 首页定制（2026-04-05）
+- 创建 `hugo-blog/layouts/index.html` 覆盖主题默认首页
+- 显示最新发布的文章列表，按日期倒序排列
+- 文章卡片包含：标题、日期、作者、分类、标签
+- 分页导航：每页默认 10 篇文章
+- 效果：访问根路径 `/` 即可浏览所有文章
+
 ### GitHub Actions 工作流演进与问题修复（2026-04-05）
 - **Hugo 安装**：工作流中显式下载并安装 Hugo extended（解决 `hugo: command not found`）
 - **周末/节假日容错**：
