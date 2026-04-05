@@ -5,7 +5,7 @@
     <p class="mb-4">最新发布的都市快报文章</p>
 
     {{ $pages := where site.RegularPages "Section" "posts" }}
-    {{ $pages = $pages | ord "PublishDate" "desc" }}
+    {{ $pages = $pages.ByDate.Reverse }}
 
     {{ range $index, $page := $pages }}
     <div class="mb-4 pb-3 border-bottom">
@@ -13,7 +13,7 @@
         <a href="{{ $page.RelPermalink }}" class="text-decoration-none">{{ $page.Title }}</a>
       </h2>
       <div class="text-muted small">
-        {{ $page.Date.Format "2006-01-02" }} · {{ $page.Params.author | default "未知作者" }} · {{ $page.Params.categories | first | default "未分类" }}
+        {{ $page.Date.Format "2006-01-02" }} · {{ $page.Params.author | default "未知作者" }} · {{ with $page.Params.categories }}{{ index . 0 }}{{ else }}未分类{{ end }}
       </div>
       {{ with $page.Params.tags }}
       <div class="mt-1">
