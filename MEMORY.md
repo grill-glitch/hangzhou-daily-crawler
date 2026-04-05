@@ -163,3 +163,10 @@
 - [x] 配置每日自动抓取 GitHub Actions（已完成 2026-04-05）
 - [ ] 扩展 RSS 过滤选项（版块、关键词）
 - [ ] 设计数据持久化策略（版本控制或云存储）
+
+### 测试记录（2026-04-05）
+- **测试数据**：2026-04-04（16 个版块，63 篇文章）
+- **RSS 生成**：成功，`atom.xml` 包含所有文章
+- **部署测试**：手动推送 `atom.xml` 到 `gh-pages` 分支
+- **验证**：`atom.xml` 文件正常，结构正确（Feedgen 1.0.0）
+- **GitHub Pages 地址**：https://grill-glitch.github.io/hangzhou-daily-crawler/atom.xml
