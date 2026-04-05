@@ -1,0 +1,104 @@
+name: Daily Crawl and RSS Deploy
+
+on:
+  # 每天 UTC 2:00 运行（北京时间 10:00）
+  schedule:
+    - cron: '0 2 * * *'
+  # 也支持手动触发
+  workflow_dispatch:
+  # push 到 neo 分支时也触发
+  push:
+    branches: [neo]
+
+jobs:
+  crawl-and-deploy:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0  # 需要完整历史以切换分支
+      
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+      
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r requirements.txt
+      
+      - name: Run crawler for today
+        id: crawl
+        run: |
+          # 获取今天的日期
+          TODAY=$(date -u +%Y-%m-%d)
+          echo "Crawling for date: $TODAY"
+          
+          # 运行爬虫
+          python3 dskb_crawler_v2.py $TODAY
+          
+          # 检查是否生成了数据文件
+          if [ -f "data/dskb_${TODAY}.json" ]; then
+            echo "Data file generated successfully"
+            echo "date=$TODAY" >> $GITHUB_OUTPUT
+          else
+            echo "No newspaper data for today (weekend/holiday)"
+            echo "date=" >> $GITHUB_OUTPUT
+          fi
+      
+      - name: Generate RSS feed
+        run: |
+          python3 generate_rss.py
+      
+      - name: Setup git
+        run: |
+          git config --global user.email "github-actions[bot]@users.noreply.github.com"
+          git config --global user.name "github-actions[bot]"
+      
+      - name: Deploy to GitHub Pages
+        if: steps.crawl.outputs.date != ''
+        run: |
+          # 确保有 atom.xml 文件
+          if [ ! -f "output/atom.xml" ]; then
+            echo "错误：未找到 atom.xml"
+            exit 1
+          fi
+          
+          # 克隆或创建 gh-pages 分支
+          git clone --branch gh-pages https://x-access-token:${{ secrets.GITHUB_TOKEN }}@github.com/${{ github.repository }} gh-pages-repo 2>/dev/null || mkdir gh-pages-repo
+          
+          cd gh-pages-repo
+          
+          # 如果是空的，初始化
+          if [ ! -f ".git/index" ]; then
+            git init
+            git checkout -b gh-pages || true
+            git remote add origin https://x-access-token:${{ secrets.GITHUB_TOKEN }}@github.com/${{ github.repository }}.git
+          fi
+          
+          # 清理旧文件（除了 .git）
+          find . -maxdepth 1 ! -name '.git' ! -name '.' -exec rm -rf {} +
+          
+          # 复制新的 atom.xml
+          cp ../output/atom.xml .
+          
+          # 添加 README 说明（可选）
+          echo "# Hangzhou Daily RSS" > README.md
+          echo "RSS feed generated automatically" >> README.md
+          
+          # 提交
+          git add .
+          git commit -m "Update RSS feed for ${{ steps.crawl.outputs.date }}" || echo "No changes to commit"
+          git push -u origin gh-pages --force
+          
+          echo "✅ RSS feed deployed to https://${{ github.repository_owner }}.github.io/hangzhou-daily-crawler/atom.xml"
+      
+      - name: No data notification
+        if: steps.crawl.outputs.date == ''
+        run: |
+          echo "ℹ️ 今天没有报纸数据（可能是周末或节假日），跳过 RSS 更新"

@@ -71,7 +71,10 @@ https://mdaily.hangzhou.com.cn/dskb/2026/04/04/article_list_20260404.html
 
 - **Vercel / Railway / Heroku** - 一键部署，自动 HTTPS
 - **自托管** - 使用 systemd 或 docker-compose
-- **GitHub Pages** - 不适用（需要动态服务端渲染）
+- **GitHub Pages** - 通过 GitHub Actions 自动部署 `atom.xml` 文件
+  - 访问地址：`https://<username>.github.io/hangzhou-daily-crawler/atom.xml`
+  - 工作流文件：`.github/workflows/deploy.yml`
+  - 每天 UTC 2:00（北京时间 10:00）自动运行
 
 ## 注意事项
 
