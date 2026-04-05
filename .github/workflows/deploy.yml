@@ -48,6 +48,7 @@ jobs:
         run: echo "date=$(date +%Y-%m-%d)" >> $GITHUB_OUTPUT
 
       - name: 运行爬虫抓取今日数据
+        continue-on-error: true
         run: |
           python3 dskb_crawler_v2.py ${{ steps.date.outputs.date }} --individual
 
@@ -68,6 +69,11 @@ jobs:
 
       - name: 转换为 Hugo 博客文章
         run: |
+          # 检查 JSON 文件是否存在
+          if [ ! -f "dskb_${{ steps.date.outputs.date }}.json" ]; then
+            echo "未找到今日数据 JSON 文件，可能是周末或节假日无报纸，跳过转换步骤"
+            exit 0
+          fi
           python3 << 'EOF'
           import json
           import os
