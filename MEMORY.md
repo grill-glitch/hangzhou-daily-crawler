@@ -138,6 +138,21 @@
 5. 调整 .gitignore 忽略 Hugo 残留
 6. 提交至 `neo` 分支（db3665d）
 
+### GitHub Actions 自动发布（2026-04-05）
+
+- **工作流文件**：`.github/workflows/deploy.yml`
+- **触发时机**：每天 UTC 2:00（北京时间 10:00）+ push 到 neo 分支 + 手动触发
+- **流程**：
+  1. 运行爬虫抓取当天数据（如周末/节假日无数据则跳过）
+  2. 生成 RSS feed (atom.xml)
+  3. 推送到 `gh-pages` 分支
+- **RSS 地址**：https://grill-glitch.github.io/hangzhou-daily-crawler/atom.xml
+- **技术实现**：
+  - `generate_rss.py` - 使用 feedgen 生成 Atom feed
+  - 支持最新的数据文件自动检测
+  - 容错处理：无数据时跳过并通知
+- **提交**：34b9b28
+
 ### 分支状态
 - `master` - 旧 Hugo 架构（最后 2e2c07c）
 - `v3` - 同 master 的版本隔离
@@ -145,6 +160,6 @@
 
 ### 待办
 - [ ] 部署 FastAPI（Vercel/Railway/自托管）
-- [ ] 配置每日自动抓取 GitHub Actions
+- [x] 配置每日自动抓取 GitHub Actions（已完成 2026-04-05）
 - [ ] 扩展 RSS 过滤选项（版块、关键词）
 - [ ] 设计数据持久化策略（版本控制或云存储）
