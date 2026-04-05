@@ -110,4 +110,41 @@
 - 先阅读相关文件再行动
 - 重大操作前备份
 - 先搜索记忆再回答问题
-- 保持持续学习，记录教训
+- 保持持续学习，记录 lessons learned
+
+## 都市快报 neo 分支重构（2026-04-05）
+
+### 核心理念
+- **版权保护**：不全文展示，只提供标题、摘要、原文链接，引导用户访问官方来源
+- **RSS 订阅**：类似 RSSHub，提供稳定可靠的 RSS feed
+- **日期导航**：点击任意日期报纸，显示该日文章列表页
+- **简洁高效**：FastAPI 动态服务，无需静态构建
+
+### 技术架构
+- **数据**：`data/dskb_YYYY-MM-DD.json`（爬虫原始数据）
+- **服务**：FastAPI（`app.py`）
+  - `/` - 首页，所有日期列表
+  - `/daily/YYYY-MM-DD` - 文章列表页（HTML）
+  - `/rss?date=YYYY-MM-DD` - RSS 2.0 feed
+  - `/api/dates` & `/api/articles/{date}` - JSON API
+- **模板**：Jinja2（`templates/index.html`, `templates/daily.html`）
+- **配置**：`config.py`, `requirements.txt`（fastapi, uvicorn, jinja2, feedgen）
+
+### 迁移步骤
+1. 删除 Hugo 相关文件（hugo-blog/, public/, .github/workflows/）
+2. 创建 FastAPI 应用和模板
+3. 移动数据至 `data/` 目录
+4. 更新 README.md 为新的服务文档
+5. 调整 .gitignore 忽略 Hugo 残留
+6. 提交至 `neo` 分支（db3665d）
+
+### 分支状态
+- `master` - 旧 Hugo 架构（最后 2e2c07c）
+- `v3` - 同 master 的版本隔离
+- `neo` - **新架构**（db3665d），RSS 订阅服务，开发中
+
+### 待办
+- [ ] 部署 FastAPI（Vercel/Railway/自托管）
+- [ ] 配置每日自动抓取 GitHub Actions
+- [ ] 扩展 RSS 过滤选项（版块、关键词）
+- [ ] 设计数据持久化策略（版本控制或云存储）
