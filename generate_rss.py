@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """
 生成 RSS feed (atom.xml)
-用于 GitHub Pages 部署
+每个daily newspaper一个条目，指向文章列表页
 """
 
 import json
@@ -14,70 +14,69 @@ DATA_DIR = "data"
 OUTPUT_DIR = "output"
 os.makedirs(OUTPUT_DIR, exist_ok=True)
 
+# 静态封面图（例子）
+COVER_IMAGE_URL = "https://fsnews.hangzhou.com.cn/group1/M00/7D/02/rB4AiWnSzVGAbsw7AAenFDNIqi8079.jpg?1024*642"
 
-def get_latest_data_file():
-    """获取最新的数据文件"""
+def get_all_data_files():
+    """获取所有数据文件"""
     files = []
+    if not os.path.exists(DATA_DIR):
+        return files
     for filename in os.listdir(DATA_DIR):
         if filename.startswith("dskb_") and filename.endswith(".json"):
-            date_str = filename[5:-5]
+            date_str = filename[5:-5]  # 提取 YYYY-MM-DD
             files.append((date_str, filename))
-    
-    if not files:
-        return None, None
-    
-    # 按日期降序排序，取第一个（最新）
+    # 按日期降序排序
     files.sort(reverse=True)
-    return files[0]
-
+    return files
 
 def generate_rss():
-    """生成 RSS feed"""
-    date_str, filename = get_latest_data_file()
-    
-    if not date_str:
-        print("错误：未找到数据文件", file=sys.stderr)
-        sys.exit(1)
-    
-    filepath = os.path.join(DATA_DIR, filename)
-    with open(filepath, 'r', encoding='utf-8') as f:
-        data = json.load(f)
-    
-    articles = data.get("articles", [])
-    
     fg = FeedGenerator()
-    fg.title("都市快报 RSS")
+    fg.title("都市快报 RSS - 每日报纸主页")
     fg.id("https://grill-glitch.github.io/hangzhou-daily-crawler/atom.xml")
     fg.link(href="https://grill-glitch.github.io/hangzhou-daily-crawler/", rel="alternate")
-    fg.description("都市快报每日精选 RSS 订阅")
+    fg.description("都市快报每日报纸主页链接 RSS 订阅，包含最新一天的报纸入口。")
     fg.language("zh-CN")
     fg.lastBuildDate(datetime.now(timezone.utc))
-    
-    for article in articles:
+
+    files = get_all_data_files()
+    if not files:
+        print("错误：未找到数据文件", file=sys.stderr)
+        sys.exit(1)
+
+    for date_str, filename in files:
+        filepath = os.path.join(DATA_DIR, filename)
+        with open(filepath, 'r', encoding='utf-8') as f:
+            data = json.load(f)
+
+        total_articles = data.get("total_articles", 0)
+        total_sections = data.get("total_sections", 0)
+
+        # 构造主页链接
+        year, month, day = date_str.split('-')
+        # 目标链接格式: https://mdaily.hangzhou.com.cn/dskb/YYYY/MM/DD/article_list_YYYYMMDD.html
+        main_url = f"https://mdaily.hangzhou.com.cn/dskb/{year}/{month}/{day}/article_list_{year}{month}{day}.html"
+
         fe = fg.add_entry()
-        fe.id(article.get("original_url", article.get("title", "entry")))
-        fe.title(article.get("title", "无标题"))
-        fe.link(href=article.get("original_url", "#"))
-        fe.author(name=article.get("author", "未知作者"))
-        # 使用 content 字段作为摘要
-        content = article.get("content", "")
-        if content:
-            fe.content(content[:500] + "...")
-        publish_date = article.get("publish_date", date_str)
-        if publish_date:
-            try:
-                # 尝试解析日期
-                dt = datetime.strptime(publish_date, "%Y-%m-%d")
-                fe.published(dt.replace(tzinfo=timezone.utc))
-            except:
-                fe.published(datetime.now(timezone.utc))
-    
-    # 保存为 atom.xml
+        fe.id(main_url)
+        fe.title(f"都市快报 {date_str}")
+        fe.link(href=main_url)
+        # 发布日期（设置为当天的凌晨 UTC）
+        try:
+            dt = datetime(int(year), int(month), int(day), tzinfo=timezone.utc)
+            fe.published(dt)
+        except Exception as e:
+            fe.published(datetime.now(timezone.utc))
+
+        # 内容：包含统计信息和封面图
+        content_html = f"<p>共 {total_sections} 个版块，{total_articles} 篇文章</p>"
+        content_html += f'<img src="{COVER_IMAGE_URL}" alt="都市快报 {date_str} 封面" width="1024" height="642" />'
+        fe.content(content_html, type='html')
+
     output_path = os.path.join(OUTPUT_DIR, "atom.xml")
     fg.atom_file(output_path, pretty=True)
     print(f"RSS feed 已生成: {output_path}")
-    print(f"共 {len(articles)} 篇文章")
-
+    print(f"共 {len(files)} 天的数据")
 
 if __name__ == "__main__":
     generate_rss()
