@@ -288,7 +288,9 @@ def crawl_newspaper(date_str: str, save_individual: bool = False) -> Dict[str, A
     }
     
     # 保存汇总 JSON
-    json_file = f"dskb_{date_str}.json"
+    # 确保 data 目录存在
+    os.makedirs("data", exist_ok=True)
+    json_file = os.path.join("data", f"dskb_{date_str}.json")
     with open(json_file, 'w', encoding='utf-8') as f:
         json.dump(result, f, ensure_ascii=False, indent=2)
     
