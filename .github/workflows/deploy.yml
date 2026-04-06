@@ -37,15 +37,22 @@ jobs:
           python -m pip install --upgrade pip
           pip install -r requirements.txt
       
+      - name: Determine target date
+        id: set-date
+        run: |
+          if [ -n "${{ inputs.target-date }}" ]; then
+            echo "TODAY=${{ inputs.target-date }}" >> $GITHUB_ENV
+          else
+            echo "TODAY=$(date -u +%Y-%m-%d)" >> $GITHUB_ENV
+          fi
+
       - name: Run crawler for target date
         id: crawl
         run: |
-          # 使用手动输入的日期或默认今天（UTC）
-          TODAY=${INPUT_TARGET_DATE:-$(date -u +%Y-%m-%d)}
           echo "Crawling for date: $TODAY"
           
           # 运行爬虫
-          python3 dskb_crawler_v2.py $TODAY
+          python3 dskb_crawler_v2.py "$TODAY"
           
           # 检查是否生成了数据文件
           if [ -f "data/dskb_${TODAY}.json" ]; then
