@@ -4,8 +4,13 @@ on:
   # 每天 UTC 2:00 运行（北京时间 10:00）
   schedule:
     - cron: '0 2 * * *'
-  # 也支持手动触发
+  # 也支持手动触发，可指定目标日期
   workflow_dispatch:
+    inputs:
+      target-date:
+        description: 'Target date to crawl (YYYY-MM-DD, default: today UTC)'
+        required: false
+        type: string
   # push 到 neo 分支时也触发
   push:
     branches: [neo]
@@ -32,11 +37,11 @@ jobs:
           python -m pip install --upgrade pip
           pip install -r requirements.txt
       
-      - name: Run crawler for today
+      - name: Run crawler for target date
         id: crawl
         run: |
-          # 获取今天的日期
-          TODAY=$(date -u +%Y-%m-%d)
+          # 使用手动输入的日期或默认今天（UTC）
+          TODAY=${INPUT_TARGET_DATE:-$(date -u +%Y-%m-%d)}
           echo "Crawling for date: $TODAY"
           
           # 运行爬虫
@@ -47,7 +52,7 @@ jobs:
             echo "Data file generated successfully"
             echo "date=$TODAY" >> $GITHUB_OUTPUT
           else
-            echo "No newspaper data for today (weekend/holiday)"
+            echo "No newspaper data for $TODAY (weekend/holiday)"
             echo "date=" >> $GITHUB_OUTPUT
           fi
       
