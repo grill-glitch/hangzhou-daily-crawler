@@ -1,9 +1,10 @@
 name: Daily Crawl and RSS Deploy
 
 on:
-  # 每天 UTC 2:00 运行（北京时间 10:00）
+  # 每天 CST 7:00 运行（北京时间 7:00，UTC 23:00）
   schedule:
-    - cron: '0 2 * * *'
+    - cron: '0 7 * * *'
+      tz: Asia/Shanghai
   # 也支持手动触发，可指定目标日期
   workflow_dispatch:
     inputs:
