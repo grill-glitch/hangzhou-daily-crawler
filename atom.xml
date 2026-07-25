@@ -2,24 +2,24 @@
 <feed xmlns="http://www.w3.org/2005/Atom" xml:lang="zh-CN">
   <id>https://grill-glitch.github.io/hangzhou-daily-crawler/atom.xml</id>
   <title>都市快报 RSS - 每日报纸主页</title>
-  <updated>2026-07-24T09:27:11.988984+00:00</updated>
+  <updated>2026-07-25T09:05:36.316906+00:00</updated>
   <link href="https://grill-glitch.github.io/hangzhou-daily-crawler/" rel="alternate"/>
   <generator uri="https://lkiesow.github.io/python-feedgen" version="1.0.0">python-feedgen</generator>
   <subtitle>都市快报每日报纸主页链接 RSS 订阅，包含最新一天的报纸入口。</subtitle>
   <entry>
     <id>https://mdaily.hangzhou.com.cn/dskb/2026/04/04/article_list_20260404.html</id>
     <title>都市快报 2026-04-04</title>
-    <updated>2026-07-24T09:27:12.454920+00:00</updated>
+    <updated>2026-07-25T09:05:36.924131+00:00</updated>
     <content type="html">&lt;p&gt;共 16 个版块，63 篇文章&lt;/p&gt;&lt;p&gt;&lt;img src="https://fsnews.hangzhou.com.cn/group1/M00/7C/FC/rB4AiWnQKlGAKLfmAAeYzMa-WD8155.jpg?1024*642" alt="都市快报 2026-04-04 封面" width="1024" height="642" /&gt;&lt;/p&gt;&lt;p&gt;&lt;a href="https://mdaily.hangzhou.com.cn/dskb/2026/04/04/article_list_20260404.html"&gt;查看 2026-04-04 报纸&lt;/a&gt;&lt;/p&gt;</content>
     <link href="https://mdaily.hangzhou.com.cn/dskb/2026/04/04/article_list_20260404.html"/>
     <published>2026-04-04T00:00:00+00:00</published>
   </entry>
   <entry>
-    <id>https://mdaily.hangzhou.com.cn/dskb/2026/07/24/article_list_20260724.html</id>
-    <title>都市快报 2026-07-24</title>
-    <updated>2026-07-24T09:27:11.990166+00:00</updated>
-    <content type="html">&lt;p&gt;共 24 个版块，73 篇文章&lt;/p&gt;&lt;p&gt;&lt;img src="https://fsnews.hangzhou.com.cn/group1/M00/7F/8E/rB4AiWpigNGAGS6fAAeuKO5ZfqE912.jpg?1024*642" alt="都市快报 2026-07-24 封面" width="1024" height="642" /&gt;&lt;/p&gt;&lt;p&gt;&lt;a href="https://mdaily.hangzhou.com.cn/dskb/2026/07/24/article_list_20260724.html"&gt;查看 2026-07-24 报纸&lt;/a&gt;&lt;/p&gt;</content>
-    <link href="https://mdaily.hangzhou.com.cn/dskb/2026/07/24/article_list_20260724.html"/>
-    <published>2026-07-24T00:00:00+00:00</published>
+    <id>https://mdaily.hangzhou.com.cn/dskb/2026/07/25/article_list_20260725.html</id>
+    <title>都市快报 2026-07-25</title>
+    <updated>2026-07-25T09:05:36.317901+00:00</updated>
+    <content type="html">&lt;p&gt;共 16 个版块，52 篇文章&lt;/p&gt;&lt;p&gt;&lt;img src="https://fsnews.hangzhou.com.cn/group1/M00/7F/93/rB4AiWpj0lGAfO4VAAbj1c7cdjc783.jpg?1024*642" alt="都市快报 2026-07-25 封面" width="1024" height="642" /&gt;&lt;/p&gt;&lt;p&gt;&lt;a href="https://mdaily.hangzhou.com.cn/dskb/2026/07/25/article_list_20260725.html"&gt;查看 2026-07-25 报纸&lt;/a&gt;&lt;/p&gt;</content>
+    <link href="https://mdaily.hangzhou.com.cn/dskb/2026/07/25/article_list_20260725.html"/>
+    <published>2026-07-25T00:00:00+00:00</published>
   </entry>
 </feed>
